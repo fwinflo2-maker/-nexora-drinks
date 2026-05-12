@@ -1,0 +1,1427 @@
+NEXORA
+Distribution Intelligence Platform
+CAHIER DES CHARGES TECHNIQUE — VERSION ULTIME
+Stack : Laravel 11 API + React 18 SPA + MySQL 8
+Produit
+NEXORA v3.0
+Secteur
+Distribution de boissons
+Type
+SaaS multi-tenant
+Stack Backend
+Laravel 11 + Sanctum + Queue
+Stack Frontend
+React 18 + Vite + TailwindCSS
+Mobile
+React Native (PWA Phase 1)
+Base de données
+MySQL 8 + Redis
+Marché cible
+Afrique francophone
+Devise
+XAF / FCFA
+TABLE DES MATIÈRES
+TABLE DES MATIÈRES
+1
+1. VISION & POSITIONNEMENT PRODUIT
+1
+1.1 Définition
+1
+1.2 Objectifs stratégiques
+1
+1.3 Différenciateurs marché
+1
+2. ARCHITECTURE TECHNIQUE
+1
+2.1 Stack technologique
+1
+2.2 Architecture globale
+1
+Pattern : API-First avec SPA découplée
+1
+Structure des couches
+1
+2.3 Multi-tenancy
+1
+2.4 Structure des dossiers Laravel
+1
+2.5 Structure React SPA
+1
+3. STRUCTURE DES RÔLES ET PERMISSIONS
+1
+3.1 Rôles système
+1
+3.2 Matrice de permissions détaillée
+1
+4. MODULES FONCTIONNELS DÉTAILLÉS
+1
+4.1 Module Stock & Entrepôt
+1
+Gestion multi-format boissons
+1
+Fonctionnalités clés
+1
+4.2 Module Consignation (Critique)
+1
+Cycle de vie d'une consigne
+1
+4.3 Module Commercial Terrain (Ultra-Critique)
+1
+Contrainte offline — Réalité africaine
+1
+Architecture offline — PWA + IndexedDB
+1
+4.4 Module Commandes Multicanal
+1
+Cycle de vie d'une commande
+1
+4.5 Module Livraison & Tournées
+1
+Génération de tournées
+1
+Documents de livraison générés
+1
+API Livraison — Endpoints clés
+1
+4.6 Module Magasinier / Entrepôt
+1
+4.7 Module Caisse (POS)
+1
+Modes de paiement supportés
+1
+Fonctionnalités POS
+1
+4.8 Module Facturation
+1
+Génération PDF — Laravel Snappy
+1
+4.9 Module Finance & Comptabilité
+1
+5. MODÈLE DE DONNÉES — MySQL 8
+1
+5.1 Conventions
+1
+5.2 Schéma complet
+1
+CORE — Socle SaaS multi-tenant
+1
+CATALOGUE — Produits & Prix
+1
+TIERS — Clients & Fournisseurs
+1
+STOCK — Entrepôts & Mouvements
+1
+COMMANDES
+1
+LIVRAISON & TOURNÉES
+1
+CONSIGNATION
+1
+FINANCE
+1
+TERRAIN & SYNC
+1
+6. ARCHITECTURE API REST
+1
+6.1 Conventions API
+1
+6.2 Structure de réponse standard
+1
+6.3 Catalogue complet des endpoints
+1
+Auth
+1
+Stock
+1
+Commandes
+1
+Livraisons
+1
+Consignation
+1
+Finance & Facturation
+1
+7. SÉCURITÉ & AUTHENTIFICATION
+1
+7.1 Authentification — Laravel Sanctum
+1
+7.2 Sécurité par couche
+1
+7.3 Audit Trail
+1
+8. MODULE IA & ANALYTICS
+1
+8.1 Fonctionnalités d'intelligence
+1
+8.2 Dashboard analytics — Composants React
+1
+9. ARCHITECTURE FRONTEND REACT
+1
+9.1 Stack React détaillée
+1
+9.2 Architecture des pages principales
+1
+9.3 Gestion du state offline (PWA)
+1
+10. ROADMAP DE DÉVELOPPEMENT
+1
+Phase 1 — MVP (Mois 1-3)
+1
+Phase 2 — Terrain & Analytics (Mois 4-5)
+1
+Phase 3 — Intelligence & Scale (Mois 6-8)
+1
+11. DÉPLOIEMENT & INFRASTRUCTURE
+1
+11.1 Stack de déploiement
+1
+11.2 Variables d'environnement critiques (.env)
+1
+12. GLOSSAIRE MÉTIER
+1
+1. VISION & POSITIONNEMENT PRODUIT
+1.1 Définition
+NEXORA est une plateforme SaaS de gestion intelligente dédiée aux entreprises de distribution de boissons. Elle couvre l'intégralité de la chaîne opérationnelle, de l'achat fournisseur à l'analyse financière, en passant par la logistique terrain africaine, la consignation et la gestion des créances.
+Flux couvert : Achat → Stock → Commande → Terrain → Préparation → Livraison → Consignation → Encaissement → Analyse
+1.2 Objectifs stratégiques
+Objectif
+Bénéfice métier
+KPI cible
+Centralisation opérationnelle
+Éliminer les Excel et carnets papier
+100% ops dans NEXORA
+Traçabilité complète
+Audit trail total
+0 perte non documentée
+Commercial terrain offline
+Commandes sans réseau
+Sync < 30 secondes
+Gestion consignation
+Réduire les pertes emballages
+-40% pertes consignes
+Analyse IA
+Décisions basées sur données
+Alertes proactives
+Multi-tenant SaaS
+1 instance = N entreprises
+Isolation totale des données
+1.3 Différenciateurs marché
+Gestion consignation complète avec dette emballage par client
+Mode offline natif pour commercial terrain (PWA / React Native)
+Optimisation des tournées de livraison intégrée
+Adaptation 100% marché africain (Mobile Money, crédit client, dépôts multiples)
+Multi-tenant avec isolation par tenant (Row-Level Security)
+API REST documentée pour intégrations tierces
+2. ARCHITECTURE TECHNIQUE
+2.1 Stack technologique
+Couche
+Technologie
+Version
+Rôle
+Backend API
+Laravel
+11.x
+API REST + Queues + Auth
+Frontend SPA
+React
+18.x
+Interface web réactive
+Build tool
+Vite
+5.x
+Bundling ultra-rapide
+CSS
+TailwindCSS
+3.x
+Styling utilitaire
+State mgmt
+Zustand
+4.x
+Global state léger
+Data fetching
+TanStack Query
+5.x
+Cache + sync serveur
+Auth
+Laravel Sanctum
+2.x
+SPA tokens + API tokens
+Base de données
+MySQL
+8.x
+Données relationnelles
+Cache / Queue
+Redis
+7.x
+Cache + Jobs async
+Recherche
+Laravel Scout
+9.x
+Full-text search
+PDF
+Laravel Snappy
+1.x
+Génération PDF
+Email
+Laravel Mail
+Native
+Notifications email
+Fichiers
+Laravel Storage
+Native
+S3-compatible uploads
+Mobile PWA
+React (PWA)
+Phase
+ 1
+App installable offline
+Serveur
+Ubuntu + Nginx
+22.04 LTS
+Production
+Conteneurs
+Docker Compose
+3.x
+Dev + déploiement
+2.2 Architecture globale
+Pattern : API-First avec SPA découplée
+Laravel = API REST pure (pas de Blade côté métier). React = SPA entièrement découplée, communique uniquement via API.
+Structure des couches
+Couche
+Responsabilité
+Technologies
+Présentation
+UI React, routing client, state management
+React 18, React Router v6, Zustand
+Communication
+Appels API, cache, optimistic updates
+Axios, TanStack Query, interceptors
+API Gateway
+Auth, rate limiting, validation
+Laravel Sanctum, throttle middleware
+Métier
+Business logic, règles métier
+Services, Actions, Domain Objects
+Données
+CRUD, transactions, queries
+Eloquent ORM, Query Builder
+Infrastructure
+Cache, queues, storage
+Redis, Laravel Queues, S3
+2.3 Multi-tenancy
+Architecture : Single Database, Row-Level Security via colonne tenant_id sur toutes les tables métier.
+Middleware TenantResolver : identifie le tenant via sous-domaine ou header X-Tenant-ID
+Scope Eloquent global automatique : toutes les queries filtrées par tenant_id
+Isolation totale des données entre entreprises clientes
+Configuration par tenant : logo, couleurs, paramètres métier
+2.4 Structure des dossiers Laravel
+app
+/ ├── Console/         
+# Commandes artisan ├── Domain/         
+# Logique métier pure │   ├── Stock/ │   ├── Orders/ │   ├── Delivery/ │   ├── Consignment/ │   └── Finance/ ├── Http/ │   
+├── Controllers/Api/V1/ │   ├── Middleware/ │   ├── Requests/      # Form Requests (validation) │   └── Resources/     # API Resources (transformers) ├── Jobs/              # Queues async ├── Models/ ├── Notifications/ ├── Observers/ ├── Policies/          # Authorization └── Services/          # Services applicatifs
+2.5 Structure React SPA
+src/ ├── api/               # Fonctions d'appel API ├── assets/            # Logos, images ├── components/ │   ├── ui/            # Composants génériques │   ├── layout/        # Shell, sidebar, navbar │   └── modules/       # Composants métier ├── hooks/             # Hooks personnalisés ├── pages/             # Pages = routes │   ├── auth/ │   ├── dashboard/ │   ├── stock/ │   ├── orders/ │   ├── delivery/ │   ├── consignment/ │   ├── finance/ │   └── admin/ ├── store/             # Zustand stores ├── utils/             # Helpers, formatters └── types/             # TypeScript interfaces
+3. STRUCTURE DES RÔLES ET PERMISSIONS
+3.1 Rôles système
+NEXORA utilise un système RBAC (Role-Based Access Control) avec permissions granulaires via Laravel Spatie Permission.
+Rôle
+Profil
+Modules accessibles
+Priorité
+super
+_admin
+Superadmin NEXORA
+Tous + administration SaaS
+Système
+Admin
+Directeur entreprise
+Tous les modules
+Critique
+Manager
+Responsable opérations
+Stock, Commandes, Livraison, Finance
+Haute
+Magasinier
+Responsable entrepôt
+Stock, Préparation, Réception
+Haute
+Commercial
+Agent terrain
+Commandes, Clients, Catalogue (offline)
+Haute
+Livreur
+Chauffeur livreur
+Tournées, Livraisons, Consignation
+Haute
+Caissier
+Agent caisse
+POS, Paiements, Factures
+Moyenne
+Comptable
+Responsable finances
+Finance, Rapports, Déclarations
+Moyenne
+client
+ API
+Intégration externe
+API publique limitée
+Technique
+3.2 Matrice de permissions détaillée
+Module
+Admin
+Manager
+Magazin.
+Commerc.
+Livreur
+Caissier
+Comptab.
+Stock & Entrepôt
+✅ CRUD
+✅ CRUD
+✅ CRUD
+👁 Lecture
+👁 Lecture
+❌
+👁 Lecture
+Commandes
+✅ CRUD
+✅ CRUD
+👁 Lecture
+✅ Créer
+👁 Lecture
+❌
+👁 Lecture
+Livraisons & Tournées
+✅ CRUD
+✅ CRUD
+✅ Prépa
+❌
+✅ Exécuter
+❌
+👁 Lecture
+Consignation
+✅ CRUD
+✅ CRUD
+✅ CRUD
+❌
+✅ CRUD
+❌
+👁 Lecture
+Caisse / POS
+✅ CRUD
+👁 Lecture
+❌
+❌
+❌
+✅ CRUD
+👁 Lecture
+Facturation
+✅ CRUD
+✅ CRUD
+❌
+👁 Lecture
+❌
+✅ Créer
+✅ CRUD
+Finance & Rapports
+✅ CRUD
+👁 Lecture
+❌
+❌
+❌
+❌
+✅ CRUD
+Clients & CRM
+✅ CRUD
+✅ CRUD
+❌
+✅ CRUD
+👁 Lecture
+👁 Lecture
+👁 Lecture
+Utilisateurs / Config
+✅ CRUD
+❌
+❌
+❌
+❌
+❌
+❌
+4. MODULES FONCTIONNELS DÉTAILLÉS
+4.1 Module Stock & Entrepôt
+Gestion multi-format boissons
+Spécificité critique : un produit existe en plusieurs unités de mesure interdépendantes (bouteille → pack → casier → palette).
+Unité
+Description
+Exemple conversion
+Bouteille (unit)
+Unité atomique
+1 bouteille = 1
+Pack / Lot
+Regroupement bouteilles
+1 pack = 6 bouteilles
+Casier / Carton
+Conditionnement distribution
+1 casier = 24 bouteilles
+Palette
+Unité transport gros
+1 palette = 40 casiers
+Fonctionnalités clés
+Fonctionnalité
+Description
+Endpoint API
+Priorité
+Multi-dépôts
+N entrepôts par tenant
+GET /warehouses
+P0
+Emplacements
+Allées/Rangées/Niveaux
+GET /locations
+P1
+Transfert inter-dépôts
+Mouvement stock tracé
+POST /stock/transfer
+P0
+Inventaire physique
+Comptage + ajustements
+POST /stock/inventory
+P0
+Alertes seuil
+Stock min/max configurable
+Event StockAlert
+P0
+Lots & FEFO
+First Expired First Out
+Attr lot_number + expiry_date
+P1
+Réception fournisseur
+PO → bon réception
+POST /receptions
+P0
+Historique mouvements
+Audit trail complet
+GET /stock/movements
+P0
+4.2 Module Consignation (Critique)
+Élément différenciateur majeur. Toute livraison de boissons implique un dépôt de consignes (emballages) récupérées lors de la visite suivante.
+Cycle de vie d'une consigne
+Livraison : X casiers livrés → X consignes déposées chez le client
+Visite suivante : consignes vides récupérées par le livreur
+Retour dépôt : consignes entrées en stock emballages
+Facturation écart : si manquant → dette emballage client
+Entité
+Champs clés
+Règle métier
+packaging
+_types
+id
+, name, unit_value_xaf, is_active
+Prix consigne configurable par type
+packaging
+_movements
+id
+, type (out/in), client_id, quantity, date
+out
+ = livraison, in = retour
+client
+_packaging_balance
+client
+_id, type_id, quantity_owed
+Solde en temps réel par client
+packaging
+_damages
+movement
+_id, quantity, reason, cost_xaf
+Casse documentée + valorisation
+4.3 Module Commercial Terrain (Ultra-Critique)
+Contrainte offline — Réalité africaine
+Le commercial opère en zone peu ou pas couverte. L'application doit fonctionner 100% offline et synchroniser automatiquement dès retour réseau.
+Architecture offline — PWA + IndexedDB
+Service Worker : cache des assets et API responses
+IndexedDB : stockage local des commandes, clients, catalogue
+Sync background : synchronisation via Background Sync API au retour réseau
+Conflict resolution : last-write-wins avec horodatage serveur
+Fonctionnalité
+Offline ?
+API Endpoint
+Notes
+Prise de commande
+✅ Oui
+POST /field-orders
+Stockée IndexedDB
+Catalogue produits
+✅ Oui (cache)
+GET /products
+Sync quotidien
+Prix personnalisés client
+✅ Oui (cache)
+GET /clients/{id}/prices
+Cache par client
+Historique client
+✅ Oui (cache 7j)
+GET /clients/{id}/history
+Pagination offline
+Géolocalisation visite
+✅ Oui
+PATCH /visits/{id}
+Coords GPS stockées
+Signature client
+✅ Oui
+POST /signatures
+Base64 PNG locale
+Sync automatique
+Auto
+POST /sync/field-orders
+Batch sur reconnexion
+Statut sync
+✅ Oui
+GET /sync/status
+Badge indicateur UI
+4.4 Module Commandes Multicanal
+Canal
+Description
+Acteur
+Terrain (mobile)
+Commercial prend la commande sur place
+Commercial
+Télévente
+Commande par téléphone, saisie back-office
+Manager / Caissier
+Client direct
+Portail client self-service (Phase 2)
+Client final
+Import CSV
+Commandes en masse pour grands comptes
+Admin / Manager
+Cycle de vie d'une commande
+BROUILLON
+CONFIRMÉE
+EN PRÉPA
+CHARGÉE
+LIVRÉE
+FACTURÉE
+Créée non validée
+Stock réservé
+Magasinier prépare
+Sur le camion
+Client reçu
+Facture émise
+4.5 Module Livraison & Tournées
+Génération de tournées
+Algorithme TSP (Traveling Salesman) simplifié par clustering géographique
+Contraintes : capacité camion, fenêtres horaires client, priorité urgence
+Assignation chauffeur et véhicule à la tournée
+Documents de livraison générés
+Feuille de route
+Liste clients + adresses + produits + quantités + consignes attendues
+Bon de livraison
+Document signable par le client, QR code de vérification
+Bordereau de chargement
+Récapitulatif par camion pour le magasinier
+Fiche retour
+Consignes récupérées + reliquats + incidents
+API Livraison — Endpoints clés
+Méthode + Route
+Action
+Acteur
+GET /routes
+Liste des tournées du jour
+Manager, Livreur
+POST /routes/generate
+Générer tournée auto
+Manager
+GET /routes/{id}/roadmap
+Feuille de route PDF
+Manager, Livreur
+POST /deliveries/{id}/complete
+Valider livraison
+Livreur
+POST /deliveries/{id}/partial
+Livraison partielle (reliquat)
+Livreur
+POST /deliveries/{id}/return-packaging
+Retour consignes
+Livreur
+PATCH /deliveries/{id}/signature
+Signature client base64
+Livreur
+4.6 Module Magasinier / Entrepôt
+Tâche
+Déclencheur
+Action système
+Output
+Réception fournisseur
+Bon de commande validé
+Créer bon réception, MàJ stock
+BRC imprimable
+Rangement
+Après réception
+Assigner emplacement produit
+Plan dépôt MàJ
+Préparation commande
+Commande 'Confirmée'
+Picking list générée
+Liste prépa
+Chargement camion
+Tournée générée
+Bordereau chargement
+Stock sorti
+Inventaire
+Planifié ou à la demande
+Comptage vs système
+Rapport écart
+Transfert inter-dépôts
+Demande manager
+Mouvements tracés
+Bordereau transfert
+4.7 Module Caisse (POS)
+Modes de paiement supportés
+Espèces (cash)
+Mobile Money : Orange Money, MTN MoMo, Wave
+Chèque (avec validation différée)
+Virement bancaire
+Crédit client (compte courant)
+Fonctionnalités POS
+Vente directe avec recherche produit par nom / code barre / QR
+Panier multi-articles avec modification quantités
+Application remises en % ou montant fixe
+Ticket de caisse imprimable (format 80mm thermal)
+Clôture de caisse journalière avec rapport détaillé
+Gestion des avances et acomptes client
+4.8 Module Facturation
+Type de document
+Déclencheur
+Contenu spécifique
+Facture définitive
+Livraison validée ou vente directe
+Montant HT, taxes, total TTC, QR code
+Facture proforma
+Devis / commande pre-livraison
+Valable X jours, mention PROFORMA
+Bon de livraison
+Génération tournée / livraison
+Quantités livrées, consignes
+Avoir / Note de crédit
+Retour marchandise
+Référence facture originale
+Relevé de compte
+Périodique (mensuel)
+Toutes transactions client
+Génération PDF — Laravel Snappy
+Template Blade + Tailwind inline styles → PDF via wkhtmltopdf. QR code = lien vérification NEXORA. Export possible en Excel via Maatwebsite.
+4.9 Module Finance & Comptabilité
+Fonctionnalité
+Description
+Données
+Vue
+Suivi créances
+Dettes clients en temps réel
+invoices
+ + payments
+Aging balance
+Gestion dépenses
+Charges opérationnelles
+expenses
+Par catégorie
+Marges par produit
+Prix achat vs prix vente
+products
+ + order_items
+Dashboard
+Tableau de bord CA
+Chiffre d'affaires jour/mois/an
+invoices
+Graphiques React
+Rapprochement caisse
+Théorique vs réel
+cash
+_sessions
+Rapport clôture
+Alertes débiteurs
+Client dépasse plafond crédit
+Event DebtThreshold
+Notif + email
+5. MODÈLE DE DONNÉES — MySQL 8
+5.1 Conventions
+Nommage tables
+snake
+_case pluriel (
+ex:
+ stock_movements)
+Clé primaire
+BIGINT UNSIGNED AUTO_INCREMENT id
+Tenant isolation
+tenant
+_id BIGINT UNSIGNED sur toutes les tables métier
+Soft delete
+deleted
+_at TIMESTAMP NULL (Laravel SoftDeletes)
+Timestamps
+created
+_at, updated_at TIMESTAMP automatiques
+Audit trail
+created
+_by, updated_by BIGINT (user_id) sur tables critiques
+Montants
+DECIMAL(
+15,2) en XAF — jamais FLOAT
+Booléens
+TINYINT(
+1) — 0 ou 1
+Statuts
+ENUM ou 
+VARCHAR(
+30) avec constantes PHP
+5.2 Schéma complet
+CORE — Socle SaaS multi-tenant
+-- Tenants (entreprises clientes NEXORA) 
+tenants:
+ id, name, slug, domain, plan, settings_
+json,   
+       logo_path, is_active, trial_ends_at, created_
+at  --
+ Utilisateurs (scopés par tenant) 
+users:
+ id, tenant_id, name, email, phone, 
+password,   
+     role, is_active, last_login_at, remember_
+token,   
+     created_at, updated_
+at  --
+ Configuration par tenant tenant_
+settings:
+ id, tenant_id, key, value, created_at
+CATALOGUE — Produits & Prix
+-- Catégories produits categories: id, tenant_id, name, description, is_active  -- Produits boissons products: id, tenant_id, category_id, name, sku,           barcode, description, image_path,           base_unit (bouteille/pack/casier/palette),           units_per_pack, units_per_case, units_per_pallet,           purchase_price, 
+sale_price, min_sale_price,           vat_rate, is_consignable, is_active,           created_at, updated_at  -- Prix personnalisés par client client_prices: id, tenant_id, client_id, product_id,                price, valid_from, valid_until, created_by
+TIERS — Clients & Fournisseurs
+-- Clients 
+clients:
+ id, tenant_id, name, phone, phone2, 
+email,   
+       address, gps_lat, gps_lng, 
+zone,   
+       credit_limit, payment_terms_
+days,   
+       commercial_id, client_type (detail/grossiste/bar/resto
+),   
+       is_active, notes, created_at, updated_
+at  --
+ Contacts clients client_
+contacts:
+ id, client_id, name, role, phone, 
+email  --
+ Fournisseurs 
+suppliers:
+ id, tenant_id, name, phone, email, 
+address,   
+         payment_terms_days, is_active, created_at
+STOCK — Entrepôts & Mouvements
+-- Entrepôts / Dépôts warehouses: id, tenant_id, name, address, type             (main/secondary/truck), is_active  -- Emplacements dans entrepôt warehouse_locations: id, warehouse_id, aisle, row, level, code  -- Stock actuel par produit/entrepôt stock_levels: id, tenant_id, product_id, warehouse_id,               quantity, reserved_quantity, min_threshold,               max_threshold, updated_at  -- Mouvements de stock (audit trail) stock_movements: id, tenant_id, product_id, warehouse_id,                  movement_type (in/out/transfer/adjustment),                  quantity, unit_cost, reference_type,                  reference_id, notes, created_by, created_at  -- Réceptions fournisseur receptions: id, tenant_id, supplier_id, warehouse_id,             reference, status, total_amount,             received_at, created_by, created_at reception_items: id, reception_id, product_id, quantity,                  unit_cost, lot_number, expiry_date
+COMMANDES
+-- Commandes orders: id, tenant_id, order_number, client_id, channel         (terrain/televente/client_direct),         
+status (draft/confirmed/preparing/loaded/delivered/invoiced),         delivery_date, warehouse_id, commercial_id,         notes, subtotal, discount_amount, total,         created_by, synced_at, created_at, updated_at  -- Lignes de commande order_items: id, order_id, product_id, quantity,              unit_price, discount_pct, line_total  -- Commandes terrain (avant sync) field_orders: id, tenant_id, commercial_id, client_id,               items_json, gps_lat, gps_lng, offline_created_at,               synced_at, sync_status, converted_order_id
+LIVRAISON & TOURNÉES
+-- Tournées routes: id, tenant_id, name, date, driver_id, vehicle_id,         status (planned/in_progress/completed), total_distance,         departure_time, arrival_time, created_by  -- Livraisons par tournée deliveries: id, tenant_id, route_id, order_id, client_id,             status (pending/delivered/partial/failed),             sequence_number, delivered_at, signature_path,             notes, created_at  -- Lignes de livraison delivery_items: id, delivery_id, product_id, ordered_qty,                 delivered_qty, returned_qty, reason_partial  -- Véhicules vehicles: id, tenant_id, name, plate, capacity_cases,           is_active, driver_id
+CONSIGNATION
+-- Types d'emballages consignés packaging_types: id, tenant_id, name (Casier 75cl, Casier 33cl...),                  unit_value_xaf, is_active  -- Mouvements de consignes packaging_movements: id, tenant_id, client_id,                      packaging_type_id, movement_type (out/in),                      quantity, delivery_id, notes,                      created_by, created_at  -- Solde consignes par client (vue dénormalisée) client_packaging_balances: id, tenant_id, client_id,                            packaging_type_id, quantity_owed,                            last_updated_at  -- Pertes / casses packaging_damages: id, tenant_id, movement_id,                    quantity, reason, cost_xaf, created_by
+FINANCE
+-- Factures invoices: id, tenant_id, invoice_number, client_id, order_id,           type (invoice/proforma/credit_note),           status (draft/sent/paid/partial/overdue),           subtotal, tax_amount, total, paid_amount, due_date,           pdf_path, sent_at, created_by, created_at  -- Paiements payments: id, tenant_id, client_id, invoice_id,           amount, method (cash/mobile_money/cheque/transfer/credit),           reference, mobile_money_ref, received_at, created_by  -- Sessions de caisse cash_sessions: id, tenant_id, cashier_id, opened_at, closed_at,                opening_balance, closing_balance, total_sales,                total_cash, total_mobile, discrepancy, notes  -- Dépenses expenses: id, tenant_id, category, description, amount,           payment_method, receipt_path, date, created_by  -- Dettes clients (vue consolidée) client_debts: id, tenant_id, client_id, invoice_id,               original_amount, remaining_amount,               due_date, is_overdue, last_reminder_at
+TERRAIN & SYNC
+-- Journal de synchronisation sync_logs: id, user_id, device_id, sync_type, status,            records_sent, records_received, errors_json,            started_at, completed_at  -- Visites clients (CRM terrain) client_visits: id, tenant_id, commercial_id, client_id,                visited_at, gps_lat, gps_lng, notes,                outcome (order/no_order/closed), duration_minutes  -- Notifications notifications: id, tenant_id, user_id, type, title,                message, read_at, data_json, created_at
+6. ARCHITECTURE API REST
+6.1 Conventions API
+Préfixe
+/api/v1/
+Auth
+Bearer Token (Laravel Sanctum)
+Format
+JSON (Content-
+Type:
+ application/json)
+Pagination
+?page=1&per_page=25 → 
+meta.pagination
+Filtres
+?filter[status]=active&filter[date_
+from]=
+2024-01-01
+Tri
+?sort=created_at&direction=desc
+Include relations
+?include=
+client,items
+,route
+Tenant
+Header X-Tenant-ID ou sous-domaine
+Versioning
+URL versioning /api/v1/, /api/v2/
+Erreurs
+RFC 7807 Problem Details JSON
+6.2 Structure de réponse standard
+// Succès liste 
+{  
+ "data
+":
+
+[...],   
+"meta
+":
+
+{ "
+current_page
+":
+ 1, "per_page
+":
+ 25, "total
+":
+
+142 }
+,   "links
+":
+
+{ "
+first
+":
+ "...", "last
+":
+ "...", "next
+":
+
+"..." }
+
+}  /
+/ Succès ressource unique 
+{ "
+data
+":
+
+{ "
+id
+":
+ 1, "name
+":
+ "...", 
+... }
+ }  // Erreur métier 
+{ "
+error
+":
+ "INSUFFICIENT_STOCK
+",   
+"message
+":
+ "Stock insuffisant pour le produit #42
+",   
+"details
+":
+
+{ "
+product_id
+":
+ 42, "available
+":
+ 10, "requested
+":
+
+25 }
+ }
+6.3 Catalogue complet des endpoints
+Auth
+Méthode + Route
+Action
+Auth requis
+POST /api/v1/auth/login
+Connexion, retourne token
+Non
+POST /api/v1/auth/logout
+Révocation token
+Oui
+GET /api/v1/auth/me
+Profil utilisateur connecté
+Oui
+POST /api/v1/auth/refresh
+Renouvellement token
+Oui
+POST /api/v1/auth/password/reset
+Demande reset mot de passe
+Non
+Stock
+Méthode + Route
+Action
+Rôles
+GET /api/v1/products
+Liste produits avec stock
+Tous
+POST /api/v1/products
+Créer produit
+Admin
+, manager
+GET /api/v1/stock/levels
+Niveaux de stock par entrepôt
+Admin
+, manager, magasinier
+POST /api/v1/stock/movements
+Enregistrer mouvement
+Magasinier
+POST /api/v1/stock/transfer
+Transfert inter-dépôts
+Magasinier
+, manager
+POST /api/v1/stock/inventory
+Soumettre inventaire physique
+Magasinier
+GET /api/v1/warehouses
+Liste entrepôts
+Tous
+GET /api/v1/receptions
+Bons de réception
+Magasinier
+, manager
+POST /api/v1/receptions
+Créer bon de réception
+magasinier
+Commandes
+Méthode + Route
+Action
+Rôles
+GET /api/v1/orders
+Liste commandes filtrables
+admin
+, manager, commercial
+POST /api/v1/orders
+Créer commande
+manager
+, commercial
+GET /api/v1/orders/{id}
+Détail commande
+admin
+, manager, commercial
+PATCH /api/v1/orders/{id}/confirm
+Confirmer commande
+manager
+PATCH /api/v1/orders/{id}/status
+Changer statut
+manager
+, magasinier
+POST /api/v1/field-orders
+Commande terrain (offline sync)
+commercial
+POST /api/v1/field-orders/batch
+Sync batch commandes terrain
+commercial
+Livraisons
+Méthode + Route
+Action
+Rôles
+GET /api/v1/routes
+Liste tournées
+manager
+, livreur
+POST /api/v1/routes/generate
+Générer tournée auto
+manager
+GET /api/v1/routes/{id}/roadmap
+PDF feuille de route
+manager
+, livreur
+POST /api/v1/deliveries/{id}/complete
+Valider livraison
+livreur
+POST /api/v1/deliveries/{id}/partial
+Livraison partielle
+livreur
+POST /api/v1/deliveries/{id}/signature
+Upload signature client
+livreur
+POST /api/v1/deliveries/{id}/packaging
+Retour consignes
+livreur
+Consignation
+Méthode + Route
+Action
+Rôles
+GET /api/v1/packaging/types
+Types d'emballages
+Tous
+GET /api/v1/packaging/balances
+Soldes par client
+manager
+, commercial
+GET /api/v1/clients/{id}/packaging
+Solde client spécifique
+Tous
+POST /api/v1/packaging/movements
+Enregistrer mouvement
+livreur
+, magasinier
+GET /api/v1/packaging/movements
+Historique mouvements
+manager
+Finance & Facturation
+Méthode + Route
+Action
+Rôles
+GET /api/v1/invoices
+Liste factures
+admin
+, manager, comptable
+POST /api/v1/invoices
+Créer facture
+manager
+, caissier
+GET /api/v1/invoices/{id}/pdf
+Télécharger PDF
+Tous (own)
+POST /api/v1/payments
+Enregistrer paiement
+caissier
+, manager
+GET /api/v1/clients/{id}/debts
+Dettes client
+manager
+, commercial
+GET /api/v1/finance/dashboard
+KPIs financiers
+admin
+, manager, comptable
+GET /api/v1/finance/aging
+Balance âgée débiteurs
+admin
+, comptable
+7. SÉCURITÉ & AUTHENTIFICATION
+7.1 Authentification — Laravel Sanctum
+SPA (React web)
+Cookie-based auth + CSRF token
+Mobile / PWA offline
+Token personnel long durée (Personal Access Token)
+API externe
+Token API avec scope limité
+Expiration token
+Configurable : 24h (web), 30j (mobile), illimité (API avec révocation)
+Refresh
+POST /auth/refresh — nouveau token émis
+7.2 Sécurité par couche
+Couche
+Menace
+Protection
+Implémentation Laravel
+Transport
+MITM, sniffing
+HTTPS TLS 1.3 obligatoire
+HSTS header, force HTTPS
+Auth
+Brute force
+Rate limiting + lockout
+throttle:
+6,1 sur /login
+API
+CSRF
+CSRF token + SameSite cookie
+Sanctum CSRF middleware
+Données
+SQL injection
+ORM Eloquent uniquement
+No raw queries
+Fichiers
+Upload malicieux
+Mime validation + scan
+Storage::putFileAs(
+)
+Secrets
+Exposition .env
+Vault / env chiffré
+.env
+ hors du webroot
+Logs
+Données sensibles
+Masquage passwords/tokens
+Log sanitizer middleware
+Multi-tenant
+Cross-tenant leak
+Scope global Eloquent
+TenantScope sur tous models
+7.3 Audit Trail
+Toute action critique est tracée : qui, quand, quoi, ancienne valeur, nouvelle valeur. Implémentation via Laravel Observer + table activity_logs.
+activity
+_logs : id, tenant_id, user_id, action, model_type, model_id, old_values_json, new_values_json, ip, user_agent, created_at
+Actions tracées : login/logout, création commande, validation livraison, paiement, modification stock, suppression
+8. MODULE IA & ANALYTICS
+8.1 Fonctionnalités d'intelligence
+Feature IA
+Algorithme
+Donnée source
+Output
+Optimisation tournée
+TSP par clustering geo
+GPS clients + historique
+Ordre visite optimal
+Prévision stock
+Moving average + trend
+Historique ventes 90j
+Alerte réapprovisionnement
+Client à risque
+Score de risque crédit
+Délais paiements + dette
+Alerte commercial
+Produits populaires
+Ranking par zone/période
+order
+_items + geo
+Catalogue priorisé
+Performance commercial
+Scoring multi-critères
+Visites + commandes + CA
+Leaderboard
+Détection anomalie
+Z-score sur ventes
+stock
+_movements
+Alerte fraude/erreur
+8.2 Dashboard analytics — Composants React
+Composant
+Données
+Bibliothèque
+Courbe CA mensuelle
+invoices
+ GROUP BY month
+Recharts LineChart
+Carte chaleur livraisons
+deliveries
+ + GPS
+Leaflet.js heatmap
+Top produits vendus
+order
+_items SUM qty
+Recharts BarChart
+Entonnoir commandes
+orders
+ par statut
+Recharts FunnelChart
+Gauge stock critique
+stock
+_levels < min
+Recharts RadialBar
+Aging balance clients
+client
+_debts par tranche
+Recharts StackedBar
+9. ARCHITECTURE FRONTEND REACT
+9.1 Stack React détaillée
+React 18
+UI library, Concurrent Mode, Suspense
+React Router v6
+Client-side routing, nested routes, lazy loading
+Zustand
+State management global léger (remplace Redux)
+TanStack Query v5
+Server state, cache, background refetch, optimistic updates
+Axios
+HTTP client avec interceptors auth + retry
+TailwindCSS 3
+Utility-first CSS, dark mode natif
+shadcn
+/ui
+Composants UI accessibles basés sur Radix UI
+React Hook Form
+Gestion formulaires + validation Zod
+Recharts
+Graphiques analytics
+Leaflet.js
+Cartes GPS livraisons et tournées
+date
+-fns
+Manipulation dates (locale fr)
+i
+18next
+Internationalisation FR/EN
+Workbox
+Service Worker pour mode offline
+9.2 Architecture des pages principales
+Page / Route
+Composants principaux
+Rôles accès
+/login
+LoginForm, RoleSelector
+Public
+/dashboard
+KPICards, SalesChart, AlertsPanel
+Tous (filtré par rôle)
+/stock
+StockTable, MovementModal, AlertsStock
+admin
+, manager, magasinier
+/orders
+OrdersList, OrderForm, OrderTimeline
+admin
+, manager, commercial
+/delivery
+RouteMap, DeliveryChecklist, SignatureCapture
+manager
+, livreur
+/consignment
+PackagingBalance, MovementForm
+manager
+, livreur, commercial
+/pos
+POSCart, ProductSearch, PaymentModal
+caissier
+/finance
+InvoiceList, AgingTable, DebtAlerts
+admin
+, comptable
+/clients
+ClientCard, CreditLimit, VisitHistory
+manager
+, commercial
+/settings
+TenantConfig, UserManagement, Roles
+admin
+9.3 Gestion du state offline (PWA)
+Pattern : React Query comme cache + IndexedDB via Dexie.js pour persistance offline. Sync via Background Sync API.
+useOfflineOrders(
+) : hook custom qui stocke les commandes dans Dexie si offline
+useSyncStatus(
+) : hook qui expose le statut de synchronisation en temps réel
+OfflineBanner : composant affiché quand 
+navigator.onLine
+ === false
+SyncIndicator : badge dans la navbar indiquant N commandes en attente de sync
+10. ROADMAP DE DÉVELOPPEMENT
+Phase 1 — MVP (Mois 1-3)
+Objectif : Opérationnel pour une première entreprise pilote.
+Sprint
+Durée
+Livrables
+Priorité
+Setup & Auth
+1 semaine
+Laravel boilerplate, Auth, Multi-tenant, React + Vite
+P0
+Catalogue & Stock
+2 semaines
+Produits, Entrepôts, Stock, Mouvements
+P0
+Clients & Commandes
+2 semaines
+CRUD Clients, Commandes, Statuts
+P0
+Livraison basique
+1 semaine
+Tournées manuelles, BL PDF
+P0
+Consignation
+1 semaine
+Mouvements consignes, solde client
+P0
+Caisse & Facturation
+2 semaines
+POS simple, Factures PDF, Paiements
+P0
+Dashboard v1
+1 semaine
+KPIs essentiels, graphiques de base
+P1
+Phase 2 — Terrain & Analytics (Mois 4-5)
+Objectif : Commercial terrain opérationnel + Analytics avancés.
+Sprint
+Durée
+Livrables
+Priorité
+PWA Offline
+2 semaines
+Service Worker, IndexedDB, Sync commercial
+P0
+Optimisation tournées
+1 semaine
+Algorithme TSP, carte Leaflet
+P1
+Analytics avancés
+2 semaines
+Graphiques Recharts, cartes chaleur
+P1
+Alertes & Notifs
+1 semaine
+Notifications in-app, email alerts
+P1
+Phase 3 — Intelligence & Scale (Mois 6-8)
+Objectif : Fonctionnalités IA + support multi-entreprises à grande échelle.
+Sprint
+Durée
+Livrables
+Priorité
+Module IA
+2 semaines
+Prévision stock, scoring client, anomalies
+P1
+App mobile native
+3 semaines
+React Native commercial + livreur
+P1
+Intégrations
+2 semaines
+API Mobile Money, export comptable
+P2
+Onboarding SaaS
+1 semaine
+Wizard création tenant, trial, facturation
+P2
+11. DÉPLOIEMENT & INFRASTRUCTURE
+11.1 Stack de déploiement
+Serveur web
+Nginx (reverse proxy + static files)
+PHP-FPM
+PHP 8.3 + OPcache
+Processus queues
+Supervisor + Laravel Horizon
+Tâches planifiées
+Laravel Schedule (cron)
+SSL/TLS
+Certbot (Let's Encrypt) auto-renewal
+Fichiers media
+Local storage ou S3 compatible (Minio)
+Monitoring
+Laravel Telescope (dev) + Sentry (prod)
+Logs
+Laravel Log + Papertrail ou ELK stack
+CI/CD
+GitHub Actions → deploy via Envoyer ou deployer.php
+11.2 Variables d'environnement critiques (.env)
+APP_NAME=NEXORA APP_ENV=production APP_URL=
+https://app.nexora.cm  DB
+_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=nexora_prod DB_USERNAME=nexora_
+user  CACHE
+_DRIVER=redis QUEUE_CONNECTION=redis SESSION_DRIVER=
+redis  SANCTUM_STATEFUL_DOMAINS=app.nexora.cm
+
+SESSION_DOMAIN=.nexora.cm  MAIL
+_MAILER=smtp # Mobile Money API Keys ORANGE_MONEY_API_KEY= MTN_MOMO_API_KEY= WAVE_API_KEY=
+12. GLOSSAIRE MÉTIER
+Consigne
+Emballage (casier, bouteille) déposé chez le client et récupéré lors de la visite suivante
+Déconsignation
+Retour physique de l'emballage consigné au dépôt
+Tournée
+Ensemble ordonné de livraisons effectuées par un chauffeur sur une journée
+Reliquat
+Partie non livrée d'une commande reportée à une prochaine livraison
+Feuille de route
+Document chauffeur listant les clients, produits, quantités et consignes pour la tournée
+Balance âgée
+Rapport de créances classées par ancienneté (0-30j, 31-60j, 61-90j, +90j)
+Picking
+Opération de prélèvement des produits en entrepôt pour préparer une commande
+BL
+Bon de Livraison — document signé par le client attestant la réception de la marchandise
+BRC
+Bon de Réception Commande — document interne attestant la réception d'une livraison fournisseur
+Tenant
+Entreprise cliente abonnée à NEXORA dans l'architecture multi-tenant SaaS
+XAF
+Franc CFA BEAC — monnaie officielle d'Afrique centrale utilisée dans NEXORA
+Mobile Money
+Paiement par téléphone mobile (Orange Money, MTN MoMo, Wave)
+NEXORA — Cahier des Charges Technique v3.0
+Stack : Laravel 11 + React 18 + MySQL 8 — Confidentiel

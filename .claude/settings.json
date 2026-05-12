@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Set-Location \"$env:TEMP\\\\ecc-install\"; node scripts/install-apply.js --dry-run --profile full --target claude 2>&1 | Select-Object -First 60)",
+      "PowerShell(Set-Location \"$env:TEMP\\\\ecc-install\"; node scripts/install-apply.js --profile full --target claude 2>&1 | Select-Object -Last 20)",
+      "PowerShell($eccDir = \"C:\\\\Users\\\\Xln0\\\\.claude\\\\ecc\"; $skills = \\(Get-ChildItem \"C:\\\\Users\\\\Xln0\\\\.claude\\\\skills\\\\ecc\" -ErrorAction SilentlyContinue\\).Count; $rules = \\(Get-ChildItem \"C:\\\\Users\\\\Xln0\\\\.claude\\\\rules\\\\ecc\" -Recurse -File -ErrorAction SilentlyContinue\\).Count; $agents = \\(Get-ChildItem \"C:\\\\Users\\\\Xln0\\\\.claude\\\\agents\" -File -ErrorAction SilentlyContinue\\).Count; Write-Host \"Skills ECC: $skills | Rules ECC: $rules | Agents total: $agents\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Xln0\\\\.claude\\\\plans\\\\\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "Read(//c/Users/Xln0/.claude/plans/**)",
+      "Bash(composer.json)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Xln0\\\\Documents\\\\Projects\\\\nexora\\\\app\\\\Providers\" -Filter \"*AuthServiceProvider*\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(php vendor/bin/pint --dirty --format agent)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Xln0\\\\Documents\\\\Projects\\\\nexora\\\\resources\\\\js\\\\routes\\\\drinks\" -Directory)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Xln0\\\\Documents\\\\Projects\\\\nexora\\\\resources\\\\js\\\\pages\" -Recurse -File)",
+      "Bash(xargs ls -la)",
+      "Bash(xargs cat)",
+      "Bash(xargs head -60)",
+      "Bash(xargs head -20)",
+      "Bash(find tests *)",
+      "Bash(Remove-Item \"app\\\\Models\\\\Drinks\\\\Family.php\", \"app\\\\Http\\\\Controllers\\\\Drinks\\\\FamilyController.php\", \"app\\\\Policies\\\\Drinks\\\\FamilyPolicy.php\", \"app\\\\Http\\\\Requests\\\\Drinks\\\\StoreFamilyRequest.php\", \"app\\\\Http\\\\Requests\\\\Drinks\\\\UpdateFamilyRequest.php\", \"database\\\\factories\\\\Drinks\\\\FamilyFactory.php\", \"database\\\\migrations\\\\2026_05_03_120100_create_drinks_families_table.php\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"PHP files deleted\")",
+      "Bash(Remove-Item \"resources\\\\js\\\\pages\\\\drinks\\\\families\\\\create.tsx\", \"resources\\\\js\\\\pages\\\\drinks\\\\families\\\\index.tsx\", \"resources\\\\js\\\\pages\\\\drinks\\\\families\\\\edit.tsx\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"TSX files deleted\")",
+      "Bash(Remove-Item \"resources\\\\js\\\\pages\\\\drinks\\\\families\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(curl -si http://localhost:8000/sanctum/csrf-cookie)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/Drinks/PricingTierController.php)",
+      "Bash(cat resources/js/routes/security/index.ts)",
+      "Bash(cat resources/js/routes/profile/index.ts)"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('teams', function (Blueprint $table) {
+            // Add sector column as a dedicated field for easier querying
+            // Denormalized from settings_json['company_type']
+            $table->string('sector', 50)->nullable()->after('plan');
+            $table->index('sector');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('teams', function (Blueprint $table) {
+            $table->dropIndex(['sector']);
+            $table->dropColumn('sector');
+        });
+    }
+};

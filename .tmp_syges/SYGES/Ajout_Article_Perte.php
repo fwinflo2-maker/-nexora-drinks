@@ -1,0 +1,126 @@
+<?php
+if (isset ($_SESSION['habilitation']) && ($_SESSION['habilitation']=="Administrateur" || $_SESSION['habilitation']=="Gerant"|| $_SESSION['habilitation']=="Caissier"))
+{
+	include("Connexion.php");
+	include("fonctions.php");
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Formulaire  d'ajout des articles à une perte.</title>
+<style type="text/css">
+label
+{
+	display:block;
+	width:150px;
+	float: left;
+	}
+</style>
+<script src="JS/Ajout_Article_Vente.js" type="text/javascript"></script>
+<script type='text/javascript'>
+//FONCTION POUR TESTER SI LE NAVIGATEUR PEUT GERER AJAX
+	function getXhr()
+			{
+				var xhr = null;
+				if(window.XMLHttpRequest) // Firefox et autres
+					xhr = new XMLHttpRequest();
+				else if(window.ActiveXObject)
+				{ // Internet Explorer
+					try {
+							xhr = new ActiveXObject("Msxml2.XMLHTTP");
+						} 
+					catch (e) {
+						xhr = new ActiveXObject("Microsoft.XMLHTTP");
+						}
+				}
+				else 
+				{ // XMLHttpRequest non supporté par le navigateur
+					alert("Votre navigateur ne supporte pas les objets XMLHTTPRequest...");
+					xhr = false;
+				}
+				return xhr;
+			}
+        /**
+        * Méthode qui sera appelée sur le click du bouton
+        */
+        function go()
+		{
+			var xhr = getXhr();
+			// On défini ce qu'on va faire quand on aura la réponse
+			xhr.onreadystatechange = function()
+			{
+				// On ne fait quelque chose que si on a tout reçu et que le serveur est ok
+				if(xhr.readyState == 4 && xhr.status == 200)
+				{
+					leselect = xhr.responseText;
+					// On se sert de innerHTML pour rajouter les options a la liste
+					document.getElementById('codeart').innerHTML =leselect;
+				}
+			}
+			// Ici on va voir comment faire du post
+			xhr.open("POST","Ajax_Select_Ar.php",true);
+			// ne pas oublier ça pour le post
+			xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+			// ne pas oublier de poster les arguments
+			// ici, l'id du nom
+			libar = document.getElementById('libar').value;
+			//iddept = sel.options[sel.selectedIndex].value;
+			xhr.send("libar="+libar);
+        }
+</script>
+</head>
+ 
+<body>
+
+<form action="CTRL/Controle_Ajout_Article_Perte.php" method="post" onsubmit="return verif_form()" >
+<fieldset style=" width:750px; margin-left:150px;"><legend>Ajouter des articles à une perte</legend>
+<table>
+<tr>
+	<td><label for="codevente">Perte *</label> </td>
+    <td><input type="text" id="codevente" name="codevente" value="<?php echo $_GET['Vte']?>" readonly="readonly" style="background:#ECECEC; width:200px;"/></td>
+</tr>
+<tr>
+	<td><label for="libar"> Mot Clé  </label></td>
+    <td><input type="text" id="libar" name="libar" style="width:200px;" onchange="go()"/></td>
+	<td><label for="codeart"> Article * </label></td>
+    <td><select name="codeart" id="codeart" style="width:250px;">
+     <?php
+	    $sql = " select id_article ,marque,libelle from article  where statut='Actif' and id_article not in (select id_article from articlevendu_frigo where id_sortiestock ='".$_GET['Vte']."') order by libelle  ";
+		$reponse= $DataBase->query($sql);
+		while($rslt= $reponse->fetch())
+		{
+		 echo "<option value='".$rslt["id_article"]."'>";
+		 echo $rslt["libelle"];
+		 echo '</option>';
+		 }
+		 ?>
+    </select> </td>
+</tr>
+<tr>
+	<td><label for="qtevendu"> Quantite * </label></td>
+    <td><input type="text" id="qtevendu" name="qtevendu" style="width:200px;"/></td>
+    <td><label for="observationvente"> Observation  </label></td>
+    <td colspan="3"><input type="text" id="observationvente" name="observationvente" style="width:250px;" maxlength="50"/></td>
+</tr>
+<tr>
+    <td colspan="2"><input type="submit" align="left" value="Enregistrer" id="Enregistrer" name="Enregistrer"/></td>
+    <td colspan="2" align="right"><input type="reset" align="right" value="Fin de Saisie" id="Retour" name="Retour" onclick="history.back()"/></td>
+</tr>
+</table>
+</fieldset>
+</form>
+</body>
+</html>
+<?php 
+}
+else
+{
+?>
+				<script language="javascript" type="text/javascript">
+				alert('Vous n\'etes pas habiliter a  acceder a cette page.');
+				history.back();
+				</script>
+<?php
+}
+?>

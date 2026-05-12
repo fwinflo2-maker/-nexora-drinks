@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\xampp\\\\htdocs\\\\SYGES\" -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(grep -A 20 \"CREATE TABLE IF NOT EXISTS \\\\`user\\\\`\" \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\BDSYGES.SQL\")",
+      "Bash(grep -A 15 \"CREATE TABLE IF NOT EXISTS \\\\`rtrembvte\\\\`\" \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\BDSYGES.SQL\")",
+      "Bash(grep -A 15 \"CREATE TABLE IF NOT EXISTS \\\\`rtrembfssr\\\\`\" \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\BDSYGES.SQL\")",
+      "Bash(grep -A 20 \"CREATE TABLE IF NOT EXISTS \\\\`client\\\\`\" \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\BDSYGES.SQL\")",
+      "Bash(grep -A 10 \"CREATE TABLE IF NOT EXISTS \\\\`parametre\\\\`\" \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\BDSYGES.SQL\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\font\\\\\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\xampp\\\\htdocs\\\\SYGES\\\\\" -Filter \"fpdf_caisse.php\" -Recurse)",
+      "Bash(php -r ' *)",
+      "Bash(grep -n '\\\\$[a-zA-Z_][a-zA-Z0-9_]*{[0-9]*}' c:/xampp/htdocs/SYGES/fpdf.php)",
+      "Bash(grep -v '//')",
+      "Bash(grep -E '\\\\$\\\\w+\\\\{|\\\\w+\\\\{[0-9$]')",
+      "Bash(grep -n '\\\\$[a-zA-Z_][a-zA-Z0-9_]*{' c:/xampp/htdocs/SYGES/fpdf.php)",
+      "Bash(grep -n '\\\\$[a-zA-Z_][a-zA-Z0-9_]*{' c:/xampp/htdocs/SYGES/fpdf2.php c:/xampp/htdocs/SYGES/\"fpdf_caisse.php\")",
+      "Bash(grep -c '\\\\$[a-zA-Z_][a-zA-Z0-9_]*{' c:/xampp/htdocs/SYGES/fpdf2.php c:/xampp/htdocs/SYGES/fpdf_caisse.php)",
+      "Bash(sed -i 's/\\\\$mqr=get_magic_quotes_runtime\\(\\);/\\\\$mqr=false; \\\\/\\\\/ removed: get_magic_quotes_runtime\\(\\) not in PHP8/g' c:/xampp/htdocs/SYGES/fpdf.php c:/xampp/htdocs/SYGES/fpdf2.php c:/xampp/htdocs/SYGES/fpdf_caisse.php)",
+      "Bash(sed -i 's/^\\\\\\(\\\\t*\\\\\\)set_magic_quotes_runtime\\(\\\\$mqr\\);/\\\\1\\\\/\\\\/set_magic_quotes_runtime\\(\\\\$mqr\\); \\\\/\\\\/ removed PHP8/g; s/^\\\\\\(\\\\t*\\\\\\)set_magic_quotes_runtime\\(0\\);/\\\\1\\\\/\\\\/set_magic_quotes_runtime\\(0\\); \\\\/\\\\/ removed PHP8/g' c:/xampp/htdocs/SYGES/fpdf_caisse.php)",
+      "Bash(php -l c:/xampp/htdocs/SYGES/fpdf.php)",
+      "Bash(php -l c:/xampp/htdocs/SYGES/Rapport_Ristournes_PDF.php)",
+      "Bash(find c:\\\\\\\\xampp\\\\\\\\htdocs\\\\\\\\SYGES\\\\\\\\CTRL -name \"*istourne*\")",
+      "Bash(find c:\\\\\\\\xampp\\\\\\\\htdocs\\\\\\\\SYGES -name \"*.xlsx\" -o -name \"*.csv\" -o -name \"*.xls\")",
+      "Bash(powershell -Command \"Select-String -Path 'c:\\\\xampp\\\\htdocs\\\\SYGES\\\\BDSYGES.SQL' -Pattern 'CREATE TABLE.*sortie_stock' -Context 0,30 | head -50\")"
+    ]
+  }
+}
