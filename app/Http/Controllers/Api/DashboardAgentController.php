@@ -6,6 +6,8 @@ use App\Models\AgentConversation;
 use App\Models\DashboardAgent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class DashboardAgentController
 {
@@ -114,7 +116,6 @@ class DashboardAgentController
      */
     private function callAIAgent(DashboardAgent $agent, AgentConversation $conversation, string $userMessage): array
     {
-        // Mock implementation - remplacer par vraie API IA
         $systemPrompt = $agent->system_prompt;
 
         // Construire l'historique de contexte
@@ -128,14 +129,155 @@ class DashboardAgentController
             ])
             ->toArray();
 
-        // TODO: Implémenter appel réel OpenAI/Claude
-        // Pour maintenant, retourner réponse mock intelligente
+        // Vérifier quelle API utiliser
+        $openaiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+        $anthropicKey = config('services.anthropic.api_key') ?? env('ANTHROPIC_API_KEY');
+
+        // Priorité à OpenAI si disponible, sinon Claude, sinon fallback mock
+        if ($openaiKey) {
+            return $this->callOpenAI($agent, $systemPrompt, $recentMessages, $userMessage, $openaiKey);
+        }
+
+        if ($anthropicKey) {
+            return $this->callAnthropic($agent, $systemPrompt, $recentMessages, $userMessage, $anthropicKey);
+        }
+
+        // Fallback: retourner réponse mock intelligente
+        Log::info('Aucune clé API configurée, utilisation du mode mock pour l\'agent IA', [
+            'agent_id' => $agent->id,
+            'agent_name' => $agent->agent_name,
+        ]);
 
         return [
             'content' => $this->generateMockResponse($agent, $userMessage),
-            'model' => 'gpt-4',
-            'tokens' => 150,
+            'model' => 'mock',
+            'tokens' => 0,
         ];
+    }
+
+    /**
+     * Appel à l'API OpenAI
+     */
+    private function callOpenAI(DashboardAgent $agent, string $systemPrompt, array $recentMessages, string $userMessage, string $apiKey): array
+    {
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ...$recentMessages,
+            ['role' => 'user', 'content' => $userMessage],
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-4o-mini',
+                'messages' => $messages,
+                'max_tokens' => 1000,
+                'temperature' => 0.7,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $content = $data['choices'][0]['message']['content'] ?? 'Désolé, je n\'ai pas pu générer de réponse.';
+                $tokens = $data['usage']['total_tokens'] ?? 0;
+
+                Log::info('Réponse OpenAI reçue avec succès', [
+                    'agent_id' => $agent->id,
+                    'tokens_used' => $tokens,
+                ]);
+
+                return [
+                    'content' => $content,
+                    'model' => 'gpt-4o-mini',
+                    'tokens' => $tokens,
+                ];
+            }
+
+            Log::error('Erreur API OpenAI', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            throw new \Exception('Erreur OpenAI: '.$response->status());
+        } catch (\Exception $e) {
+            Log::error('Échec appel OpenAI', [
+                'error' => $e->getMessage(),
+                'agent_id' => $agent->id,
+            ]);
+
+            // Fallback sur mock en cas d'erreur
+            return [
+                'content' => $this->generateMockResponse($agent, $userMessage).' [Mode dégradé - erreur API]',
+                'model' => 'mock-fallback',
+                'tokens' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Appel à l'API Anthropic (Claude)
+     */
+    private function callAnthropic(DashboardAgent $agent, string $systemPrompt, array $recentMessages, string $userMessage, string $apiKey): array
+    {
+        // Convertir le format pour Anthropic
+        $messages = collect($recentMessages)
+            ->filter(fn ($msg) => $msg['role'] !== 'system')
+            ->values()
+            ->toArray();
+
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        try {
+            $response = Http::withHeaders([
+                'x-api-key' => $apiKey,
+                'Content-Type' => 'application/json',
+                'anthropic-version' => '2023-06-01',
+            ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
+                'model' => 'claude-3-haiku-20240307',
+                'max_tokens' => 1000,
+                'system' => $systemPrompt,
+                'messages' => $messages,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $content = $data['content'][0]['text'] ?? 'Désolé, je n\'ai pas pu générer de réponse.';
+                $inputTokens = $data['usage']['input_tokens'] ?? 0;
+                $outputTokens = $data['usage']['output_tokens'] ?? 0;
+                $tokens = $inputTokens + $outputTokens;
+
+                Log::info('Réponse Anthropic reçue avec succès', [
+                    'agent_id' => $agent->id,
+                    'tokens_used' => $tokens,
+                ]);
+
+                return [
+                    'content' => $content,
+                    'model' => 'claude-3-haiku',
+                    'tokens' => $tokens,
+                ];
+            }
+
+            Log::error('Erreur API Anthropic', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            throw new \Exception('Erreur Anthropic: '.$response->status());
+        } catch (\Exception $e) {
+            Log::error('Échec appel Anthropic', [
+                'error' => $e->getMessage(),
+                'agent_id' => $agent->id,
+            ]);
+
+            // Fallback sur mock en cas d'erreur
+            return [
+                'content' => $this->generateMockResponse($agent, $userMessage).' [Mode dégradé - erreur API]',
+                'model' => 'mock-fallback',
+                'tokens' => 0,
+            ];
+        }
     }
 
     /**
