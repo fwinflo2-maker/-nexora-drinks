@@ -31,17 +31,15 @@ class ArticleController extends Controller
         ]);
     }
 
-    public function show(string $current_team, string $article): Response
+    public function show(string $current_team, Article $article): Response
     {
         $team = Team::where('slug', $current_team)->firstOrFail();
-        $articleModel = Article::withoutGlobalScopes()->where('team_id', $team->id)->findOrFail($article);
-        
-        Gate::authorize('view', $articleModel);
+        Gate::authorize('view', $article);
 
-        $articleModel->load(['category', 'packaging']);
+        $article->load(['category', 'packaging']);
 
         return Inertia::render('drinks/articles/show', [
-            'article' => $articleModel,
+            'article' => $article,
         ]);
     }
 
@@ -71,45 +69,39 @@ class ArticleController extends Controller
         ]);
     }
 
-    public function edit(string $current_team, string $article): Response
+    public function edit(string $current_team, Article $article): Response
     {
         $team = Team::where('slug', $current_team)->firstOrFail();
-        $articleModel = Article::withoutGlobalScopes()->where('team_id', $team->id)->findOrFail($article);
-        
-        Gate::authorize('update', $articleModel);
+        Gate::authorize('update', $article);
 
         return Inertia::render('drinks/articles/edit', [
-            'article' => $articleModel,
+            'article' => $article,
             'categories' => $team->drinksCategories()->orderBy('name')->get(),
             'packagings' => $team->drinksPackagings()->orderBy('name')->get(),
         ]);
     }
 
-    public function update(UpdateArticleRequest $request, string $current_team, string $article): RedirectResponse
+    public function update(UpdateArticleRequest $request, string $current_team, Article $article): RedirectResponse
     {
         $team = Team::where('slug', $current_team)->firstOrFail();
-        $articleModel = Article::withoutGlobalScopes()->where('team_id', $team->id)->findOrFail($article);
-        
-        Gate::authorize('update', $articleModel);
+        Gate::authorize('update', $article);
 
-        $articleModel->update($request->validated());
+        $article->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Article mis à jour.')]);
 
         return to_route('drinks.articles.show', [
             'current_team' => $team->slug,
-            'article' => $articleModel->id,
+            'article' => $article->id,
         ]);
     }
 
-    public function destroy(string $current_team, string $article): RedirectResponse
+    public function destroy(string $current_team, Article $article): RedirectResponse
     {
         $team = Team::where('slug', $current_team)->firstOrFail();
-        $articleModel = Article::withoutGlobalScopes()->where('team_id', $team->id)->findOrFail($article);
-        
-        Gate::authorize('delete', $articleModel);
+        Gate::authorize('delete', $article);
 
-        $articleModel->delete();
+        $article->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Article supprimé.')]);
 
