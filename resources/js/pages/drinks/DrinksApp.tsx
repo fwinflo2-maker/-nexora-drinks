@@ -157,6 +157,8 @@ export default function DrinksApp({ _module, _action, ...props }: DrinksAppProps
         return () => clearTimeout(timer);
     }, []);
 
+    const currentItem = MODULE_GROUPS.flatMap(g => g.items).find(i => i.id === _module) || { label: _module };
+
     const handleLogout = () => {
         router.post(logout().url, {}, {
             onFinish: () => {
@@ -461,8 +463,6 @@ return <StockSnapshotShow snapshots={props.snapshots} date={props.date} />;
                 return <div>Formulaire introuvable</div>;
         }
     };
-
-    const currentItem = MODULE_GROUPS.flatMap(g => g.items).find(i => i.id === _module) || { label: _module };
 
     const userInitials = auth?.user?.name
         ? auth.user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
