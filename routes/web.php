@@ -150,6 +150,7 @@ Route::prefix('{current_team}')
             // ── Membres (gestion d'équipe)
             Route::get('membres', [Drinks\MembresController::class, 'index'])->name('membres.index');
             Route::post('membres/store', [Drinks\MembresController::class, 'store'])->name('membres.store');
+            Route::post('membres/{user}/role', [Drinks\MembresController::class, 'updateRole'])->name('membres.update-role');
             Route::post('membres/{user}/password', [Drinks\MembresController::class, 'updatePassword'])->name('membres.update-password');
             Route::post('membres/{user}/block', [Drinks\MembresController::class, 'block'])->name('membres.block');
             Route::post('membres/{user}/unblock', [Drinks\MembresController::class, 'unblock'])->name('membres.unblock');

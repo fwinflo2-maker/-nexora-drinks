@@ -1,77 +1,32 @@
 ```php
-# Compiled and build artifacts
+/vendor/
+/node_modules/
+.env
+.env.local
+.env.*
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+coverage/
+htmlcov/
+.coverage
+.idea/
+.vscode/
 *.pyc
 __pycache__/
 *.o
 *.obj
-*.class
 *.exe
 *.dll
 *.so
 *.a
 *.out
-
-# Dependencies
-node_modules/
-vendor/
-composer.lock
-.env
-.env.local
-.env.*
-
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Build directories
 dist/
 build/
 target/
 .gradle/
-
-# Python specific
-*.pyc
-__pycache__/
-*.pyo
-*.pyd
-.Python
-*.so
-.Python
-*.egg-info/
-.eggs/
 .mypy_cache/
 .pytest_cache/
-.tox/
-.coverage
-coverage.xml
-
-# PHP specific
-*.phar
-vendor/composer/
-composer.lock
-
-# OS generated files
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Icon?
-.directory
-.Trashes
-*.nib
-*~
-.viminfo
-.netrwhist
 ```
