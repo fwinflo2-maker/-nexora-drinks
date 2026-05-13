@@ -95,7 +95,8 @@ enum TeamRole: string
                 TeamPermission::UsersUpdate,
                 TeamPermission::UsersDelete,
                 TeamPermission::DrinksDashboardView,
-                TeamPermission::DrinksArticlesView,
+                TeamPermission::DrinksArticlesView, TeamPermission::DrinksArticlesCreate,
+                TeamPermission::DrinksArticlesUpdate, TeamPermission::DrinksArticlesDelete,
                 TeamPermission::DrinksCategoriesView,
                 TeamPermission::DrinksSuppliersView, TeamPermission::DrinksSuppliersCreate,
                 TeamPermission::DrinksSuppliersUpdate, TeamPermission::DrinksSuppliersDelete,
@@ -118,7 +119,8 @@ enum TeamRole: string
             // OPS : approvisionnements, fournisseurs, inventaires, pertes, mouvements, rapports stock.
             self::Ops => [
                 TeamPermission::DrinksDashboardView,
-                TeamPermission::DrinksArticlesView,
+                TeamPermission::DrinksArticlesView, TeamPermission::DrinksArticlesCreate,
+                TeamPermission::DrinksArticlesUpdate, TeamPermission::DrinksArticlesDelete,
                 TeamPermission::DrinksCategoriesView,
                 TeamPermission::DrinksSuppliersView, TeamPermission::DrinksSuppliersCreate,
                 TeamPermission::DrinksSuppliersUpdate, TeamPermission::DrinksSuppliersDelete,
@@ -165,6 +167,12 @@ enum TeamRole: string
                 TeamPermission::ClientsView, TeamPermission::ClientsCreate, TeamPermission::ClientsUpdate, TeamPermission::ClientsDelete,
                 TeamPermission::ConsignmentView,
                 TeamPermission::InvoicesView,
+                // Drinks : ventes et clients
+                TeamPermission::DrinksDashboardView,
+                TeamPermission::DrinksArticlesView,
+                TeamPermission::DrinksClientsView, TeamPermission::DrinksClientsCreate,
+                TeamPermission::DrinksClientsUpdate, TeamPermission::DrinksClientsDelete,
+                TeamPermission::DrinksSalesView,
             ],
 
             self::Livreur => [

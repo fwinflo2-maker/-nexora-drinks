@@ -1,43 +1,44 @@
-```
-# Environment
-.env
-.env.local
-.env.*
-
-# Logs
-*.log
+# Compiled and build artifacts
+*.pyc
+__pycache__/
 
 # Dependencies
 vendor/
+composer.lock
 
-# Build artifacts
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
 
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# PHP specific
-*.php~
-**/vendor/**/*
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
 
-# Laravel specific (if applicable)
-bootstrap/cache/
-storage/logs/
-storage/framework/cache/
-storage/framework/sessions/
-storage/framework/views/
-public/storage
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.Python
+*.so
 
-# Editor folders
-.vscode/
-.idea/
-```
+# Testing
+.phpunit.result.cache
+.php_cs.cache
+
+# IDE
+nbproject/
