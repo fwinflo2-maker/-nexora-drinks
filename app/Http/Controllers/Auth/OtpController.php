@@ -40,7 +40,7 @@ class OtpController extends Controller
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         Cache::put('otp_'.$request->email, $otp, now()->addMinutes(15));
 
-        Log::info('OTP généré', ['email' => $request->email]);
+        Log::info('OTP généré', ['email' => $request->email, 'otp' => $otp]);
 
         try {
             Mail::raw(
@@ -50,19 +50,11 @@ class OtpController extends Controller
                         ->subject('Votre code de vérification NEXORA');
                 }
             );
-            Log::info('OTP mail envoyé (ou loggé)', ['email' => $request->email]);
+            Log::info('OTP mail envoyé avec succès', ['email' => $request->email]);
         } catch (\Exception $e) {
             Log::error('OTP mail échoué', ['error' => $e->getMessage()]);
 
-            if (app()->environment('local')) {
-                return response()->json(['success' => true, 'dev_otp' => $otp]);
-            }
-
-            return response()->json(['success' => false, 'message' => "Impossible d'envoyer l'email."], 500);
-        }
-
-        if (app()->environment('local')) {
-            return response()->json(['success' => true, 'dev_otp' => $otp]);
+            return response()->json(['success' => false, 'message' => "Impossible d'envoyer l'email: ".$e->getMessage()], 500);
         }
 
         return response()->json(['success' => true]);
