@@ -4,6 +4,7 @@ namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasCodeGeneration;
+use App\Concerns\LogsActivity;
 use Database\Factories\Drinks\SupplierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Supplier extends Model
 {
     /** @use HasFactory<SupplierFactory> */
-    use BelongsToTeam, HasCodeGeneration, HasFactory;
+    use BelongsToTeam, HasCodeGeneration, HasFactory, LogsActivity;
 
     protected $table = 'drinks_suppliers';
 

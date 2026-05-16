@@ -61,3 +61,25 @@ function drinksMember(TeamRole $role): array
 
     return [$user->fresh(), $team];
 }
+
+function hotelMember(TeamRole $role = TeamRole::HotelReceptionist): array
+{
+    $user = User::factory()->create();
+    $team = Team::factory()->create(['is_active' => true]);
+    $team->members()->attach($user->id, ['role' => $role->value]);
+    $user->update(['current_team_id' => $team->id]);
+    $team->activateModule('hotel', $user);
+
+    return [$user->fresh(), $team->fresh()];
+}
+
+function fnbMember(TeamRole $role = TeamRole::FnBWaiter): array
+{
+    $user = User::factory()->create();
+    $team = Team::factory()->create(['is_active' => true]);
+    $team->members()->attach($user->id, ['role' => $role->value]);
+    $user->update(['current_team_id' => $team->id]);
+    $team->activateModule('fnb', $user);
+
+    return [$user->fresh(), $team->fresh()];
+}

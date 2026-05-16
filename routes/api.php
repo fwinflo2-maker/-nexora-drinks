@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 // ── Routes API v1 ──────────────────────────────────────────────────────────────
 Route::prefix('api/v1')
-    ->middleware(['api', 'auth', 'verified'])
+    ->middleware(['api', 'auth', 'verified', 'throttle:60,1'])
     ->group(function () {
 
         // Gestion des profils personnalisés
@@ -27,8 +27,9 @@ Route::prefix('api/v1')
                 Route::get('{customProfile}/users', 'users');       // Utilisateurs assignés
             });
 
-        // Dashboard Agents IA
+        // Dashboard Agents IA — throttle strict (appels LLM coûteux)
         Route::prefix('dashboard-agents')
+            ->middleware('throttle:20,1')
             ->controller(DashboardAgentController::class)
             ->group(function () {
                 Route::get('/', 'index');                                    // Lister agents
@@ -66,7 +67,7 @@ Route::prefix('api/v1')
 
 // ── Routes GODMODE Super Admin ──────────────────────────────────────────────────
 Route::prefix('api/v1/godmode')
-    ->middleware(['api', 'auth', EnsureSuperAdmin::class])
+    ->middleware(['api', 'auth', EnsureSuperAdmin::class, 'throttle:10,1'])
     ->controller(GodmodeController::class)
     ->group(function () {
         Route::get('dashboard', 'dashboard');                          // Vue complète système

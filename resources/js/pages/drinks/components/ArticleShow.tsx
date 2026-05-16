@@ -1,5 +1,5 @@
 import { Link, usePage, router } from '@inertiajs/react';
-import { ArrowLeft, Package, Tag, Layers, DollarSign, History, Edit3, Trash2, CheckCircle2, XCircle, Info, Box } from 'lucide-react';
+import { ArrowLeft, Package, Tag, Layers, DollarSign, History, Edit3, Trash2, CheckCircle2, XCircle, Info, Box, Settings } from 'lucide-react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

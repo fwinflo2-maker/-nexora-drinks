@@ -3,6 +3,7 @@
 namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\LogsActivity;
 use Database\Factories\Drinks\ExpenseTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ExpenseType extends Model
 {
     /** @use HasFactory<ExpenseTypeFactory> */
-    use BelongsToTeam, HasFactory;
+    use BelongsToTeam, HasFactory, LogsActivity;
 
     protected $table = 'drinks_expense_types';
 

@@ -4,6 +4,7 @@ namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasCodeGeneration;
+use App\Concerns\LogsActivity;
 use App\Enums\Drinks\TransactionStatus;
 use App\Models\User;
 use Database\Factories\Drinks\CashInputFactory;
@@ -20,13 +21,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CashInput extends Model
 {
     /** @use HasFactory<CashInputFactory> */
-    use BelongsToTeam, HasCodeGeneration, HasFactory;
+    use BelongsToTeam, HasCodeGeneration, HasFactory, LogsActivity;
 
     protected $table = 'drinks_cash_inputs';
 
     protected function getCodePrefix(): string
     {
-        return 'APT';
+        return 'APR';
     }
 
     /** @return BelongsTo<User, $this> */

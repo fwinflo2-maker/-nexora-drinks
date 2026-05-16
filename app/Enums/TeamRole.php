@@ -17,6 +17,17 @@ enum TeamRole: string
     case Comptable = 'comptable';
     case Member = 'member';
 
+    // Hotel roles
+    case HotelManager = 'hotel_manager';
+    case HotelReceptionist = 'hotel_receptionist';
+    case HotelHousekeeper = 'hotel_housekeeper';
+
+    // F&B roles
+    case FnBManager = 'fnb_manager';
+    case FnBWaiter = 'fnb_waiter';
+    case FnBKitchen = 'fnb_kitchen';
+    case FnBCashier = 'fnb_cashier';
+
     /**
      * Get the display label for the role.
      */
@@ -35,6 +46,13 @@ enum TeamRole: string
             self::Caissier => 'Caissier',
             self::Comptable => 'Comptable',
             self::Member => 'Membre',
+            self::HotelManager => 'Manager Hôtel',
+            self::HotelReceptionist => 'Réceptionniste',
+            self::HotelHousekeeper => 'Gouvernant(e)',
+            self::FnBManager => 'Manager F&B',
+            self::FnBWaiter => 'Serveur / Serveuse',
+            self::FnBKitchen => 'Cuisine',
+            self::FnBCashier => 'Caissier F&B',
         };
     }
 
@@ -70,6 +88,10 @@ enum TeamRole: string
                 TeamPermission::SettingsView, TeamPermission::SettingsUpdate,
                 // Drinks — full access
                 ...self::drinksFullAccess(),
+                // Hotel — full access
+                ...self::hotelFullAccess(),
+                // F&B — full access
+                ...self::fnbFullAccess(),
             ],
 
             self::Manager => [
@@ -95,12 +117,15 @@ enum TeamRole: string
                 TeamPermission::UsersUpdate,
                 TeamPermission::UsersDelete,
                 TeamPermission::DrinksDashboardView,
-                TeamPermission::DrinksArticlesView,
+                TeamPermission::DrinksArticlesView, TeamPermission::DrinksArticlesCreate,
+                TeamPermission::DrinksArticlesUpdate, TeamPermission::DrinksArticlesDelete,
                 TeamPermission::DrinksCategoriesView,
                 TeamPermission::DrinksSuppliersView, TeamPermission::DrinksSuppliersCreate,
                 TeamPermission::DrinksSuppliersUpdate, TeamPermission::DrinksSuppliersDelete,
                 TeamPermission::DrinksPackagingsView,
-                TeamPermission::DrinksSalesView,
+                TeamPermission::DrinksSalesView, TeamPermission::DrinksSalesCreate,
+                TeamPermission::DrinksSalesUpdate, TeamPermission::DrinksSalesDelete,
+                TeamPermission::DrinksSalesValidate,
                 TeamPermission::DrinksProcurementsView, TeamPermission::DrinksProcurementsCreate,
                 TeamPermission::DrinksProcurementsUpdate, TeamPermission::DrinksProcurementsDelete,
                 TeamPermission::DrinksProcurementsValidate,
@@ -118,12 +143,12 @@ enum TeamRole: string
             // OPS : approvisionnements, fournisseurs, inventaires, pertes, mouvements, rapports stock.
             self::Ops => [
                 TeamPermission::DrinksDashboardView,
-                TeamPermission::DrinksArticlesView,
+                TeamPermission::DrinksArticlesView, TeamPermission::DrinksArticlesCreate,
+                TeamPermission::DrinksArticlesUpdate, TeamPermission::DrinksArticlesDelete,
                 TeamPermission::DrinksCategoriesView,
                 TeamPermission::DrinksSuppliersView, TeamPermission::DrinksSuppliersCreate,
                 TeamPermission::DrinksSuppliersUpdate, TeamPermission::DrinksSuppliersDelete,
                 TeamPermission::DrinksPackagingsView,
-                TeamPermission::DrinksSalesView,
                 TeamPermission::DrinksProcurementsView, TeamPermission::DrinksProcurementsCreate,
                 TeamPermission::DrinksProcurementsUpdate, TeamPermission::DrinksProcurementsDelete,
                 TeamPermission::DrinksProcurementsValidate,
@@ -223,22 +248,58 @@ enum TeamRole: string
                 TeamPermission::DrinksCashInputsView, TeamPermission::DrinksCashInputsCreate,
                 TeamPermission::DrinksCashInputsUpdate, TeamPermission::DrinksCashInputsValidate,
                 TeamPermission::DrinksCashDepositsView, TeamPermission::DrinksCashDepositsCreate,
-                TeamPermission::DrinksCashDepositsUpdate, TeamPermission::DrinksCashDepositsValidate,
+                TeamPermission::DrinksCashDepositsUpdate, TeamPermission::DrinksCashDepositsDelete,
+                TeamPermission::DrinksCashDepositsValidate,
                 TeamPermission::DrinksPaymentsView, TeamPermission::DrinksPaymentsCreate,
                 TeamPermission::DrinksPaymentsUpdate, TeamPermission::DrinksPaymentsDelete,
                 TeamPermission::DrinksReportsView,
             ],
 
             self::Member => [],
-        };
-    }
 
-    /**
-     * Determine if the role has the given permission.
-     */
-    public function hasPermission(TeamPermission $permission): bool
-    {
-        return in_array($permission, $this->permissions());
+            self::HotelManager => [
+                TeamPermission::HotelDashboardView,
+                ...self::hotelFullAccess(),
+            ],
+
+            self::HotelReceptionist => [
+                TeamPermission::HotelDashboardView,
+                TeamPermission::HotelRoomsView,
+                TeamPermission::HotelRoomTypesView,
+                TeamPermission::HotelGuestsView, TeamPermission::HotelGuestsCreate, TeamPermission::HotelGuestsEdit,
+                TeamPermission::HotelReservationsView, TeamPermission::HotelReservationsCreate, TeamPermission::HotelReservationsEdit,
+                TeamPermission::HotelReservationsCheckin, TeamPermission::HotelReservationsCheckout, TeamPermission::HotelReservationsCancel,
+                TeamPermission::HotelFoliosView, TeamPermission::HotelFoliosManage,
+            ],
+
+            self::HotelHousekeeper => [
+                TeamPermission::HotelRoomsView,
+            ],
+
+            self::FnBManager => [
+                TeamPermission::FnBDashboardView,
+                ...self::fnbFullAccess(),
+            ],
+
+            self::FnBWaiter => [
+                TeamPermission::FnBDashboardView,
+                TeamPermission::FnBMenuView,
+                TeamPermission::FnBTablesView,
+                TeamPermission::FnBOrdersView, TeamPermission::FnBOrdersCreate, TeamPermission::FnBOrdersEdit,
+            ],
+
+            self::FnBKitchen => [
+                TeamPermission::FnBKitchenView,
+                TeamPermission::FnBKitchenUpdateStatus,
+                TeamPermission::FnBOrdersView,
+            ],
+
+            self::FnBCashier => [
+                TeamPermission::FnBDashboardView,
+                TeamPermission::FnBOrdersView, TeamPermission::FnBOrdersClose,
+                TeamPermission::FnBReportsView,
+            ],
+        };
     }
 
     /**
@@ -260,7 +321,22 @@ enum TeamRole: string
             self::Caissier => 4,
             self::Comptable => 4,
             self::Member => 1,
+            self::HotelManager => 8,
+            self::HotelReceptionist => 5,
+            self::HotelHousekeeper => 3,
+            self::FnBManager => 8,
+            self::FnBWaiter => 4,
+            self::FnBKitchen => 3,
+            self::FnBCashier => 4,
         };
+    }
+
+    /**
+     * Check if this role has the given permission.
+     */
+    public function hasPermission(TeamPermission $permission): bool
+    {
+        return in_array($permission, $this->permissions(), strict: true);
     }
 
     /**
@@ -286,7 +362,7 @@ enum TeamRole: string
     }
 
     /**
-     * All drinks-sector permissions, used by Admin and Gerant role mappings.
+     * All drinks-sector permissions.
      *
      * @return array<TeamPermission>
      */
@@ -294,6 +370,32 @@ enum TeamRole: string
     {
         return collect(TeamPermission::cases())
             ->filter(fn (TeamPermission $p) => str_starts_with($p->value, 'drinks.'))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * All hotel-sector permissions.
+     *
+     * @return array<TeamPermission>
+     */
+    private static function hotelFullAccess(): array
+    {
+        return collect(TeamPermission::cases())
+            ->filter(fn (TeamPermission $p) => str_starts_with($p->value, 'hotel.'))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * All F&B-sector permissions.
+     *
+     * @return array<TeamPermission>
+     */
+    private static function fnbFullAccess(): array
+    {
+        return collect(TeamPermission::cases())
+            ->filter(fn (TeamPermission $p) => str_starts_with($p->value, 'fnb.'))
             ->values()
             ->all();
     }

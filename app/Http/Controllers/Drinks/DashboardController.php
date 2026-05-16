@@ -57,9 +57,9 @@ class DashboardController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->pivot->role,
-                'roleLabel' => TeamRole::from($user->pivot->role)->label(),
-                'is_owner' => $user->id === $current_team->user_id,
+                'role' => $user->pivot->role?->value,
+                'roleLabel' => $user->pivot->role?->label(),
+                'is_owner' => $user->pivot->role === TeamRole::Owner,
                 'blocked_at' => $user->blocked_at,
             ]);
 
@@ -108,6 +108,8 @@ class DashboardController extends Controller
             'expense_data' => $expenseData,
             'recent_sales' => Sale::with('client')->where('team_id', $tid)->validated()->latest('document_date')->take(5)->get(),
             'low_stock_articles' => Article::where('team_id', $tid)->where('stock_qty', '<', 20)->orderBy('stock_qty')->take(5)->get(),
+            'rupture_articles' => Article::where('team_id', $tid)->where('stock_qty', '<=', 0)->orderBy('name')->take(10)->get(),
+            'ruptures_count' => Article::where('team_id', $tid)->where('stock_qty', '<=', 0)->count(),
         ];
 
         return match ($role) {
@@ -135,7 +137,9 @@ class DashboardController extends Controller
                 'expenses_total' => (float) Expense::where('team_id', $tid)->validated()->between($from, $to)->sum('amount'),
                 'payments_total' => (float) Payment::where('team_id', $tid)->between($from, $to)->sum('amount'),
                 'procurements_month' => Procurement::where('team_id', $tid)->validated()->between($from, $to)->count(),
+                'articles_count' => Article::where('team_id', $tid)->count(),
                 'low_stock_count' => Article::where('team_id', $tid)->where('stock_qty', '<=', 10)->count(),
+                'losses_month' => Loss::where('team_id', $tid)->validated()->between($from, $to)->count(),
                 'cash_deposits_total' => (float) CashDeposit::where('team_id', $tid)->validated()->between($from, $to)->sum('total_amount'),
                 'cash_inputs_total' => (float) CashInput::where('team_id', $tid)->validated()->between($from, $to)->sum('amount'),
             ]),

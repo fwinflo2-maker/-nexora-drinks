@@ -4,6 +4,7 @@ namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasCodeGeneration;
+use App\Concerns\LogsActivity;
 use Database\Factories\Drinks\PackagingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,12 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'team_id', 'code', 'name', 'deposit_price', 'stock_qty',
-    'packs_per_unit', 'is_active',
+    'packs_per_unit', 'is_active', 'is_returnable',
 ])]
 class Packaging extends Model
 {
     /** @use HasFactory<PackagingFactory> */
-    use BelongsToTeam, HasCodeGeneration, HasFactory;
+    use BelongsToTeam, HasCodeGeneration, HasFactory, LogsActivity;
 
     protected $table = 'drinks_packagings';
 
@@ -46,6 +47,7 @@ class Packaging extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_returnable' => 'boolean',
         ];
     }
 }

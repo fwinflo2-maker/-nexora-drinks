@@ -52,6 +52,7 @@ test('admin peut créer un profil et l\'ajouter à l\'équipe', function () {
             'name' => 'Nouveau Membre',
             'email' => 'nouveau@test.com',
             'password' => 'password123',
+            'password_confirmation' => 'password123',
             'role' => TeamRole::Caissier->value,
         ])
         ->assertRedirect();

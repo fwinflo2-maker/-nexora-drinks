@@ -116,14 +116,6 @@ function DateFilters({
 }) {
     const isStockReport = action === 'stock-report';
 
-    const routeNameMap: Record<string, string> = {
-        brouillard: 'drinks.reports.brouillard',
-        'sales-report': 'drinks.reports.sales',
-        'stock-report': 'drinks.reports.stock',
-        'client-report': 'drinks.reports.clients',
-        roadmap: 'drinks.reports.roadmap',
-    };
-
     const [localFrom, setLocalFrom] = useState(dateFrom ?? '');
     const [localTo, setLocalTo] = useState(dateTo ?? '');
     const [localDate, setLocalDate] = useState(date ?? '');
@@ -146,7 +138,7 @@ params.date_to = localTo;
 }
         }
 
-        router.get(route(routeNameMap[action], { current_team: slug }), params);
+        router.get(route(REPORT_ROUTES[action], { current_team: slug }), params);
     };
 
     return (
@@ -196,7 +188,8 @@ params.date_to = localTo;
 function BrouillardView({ data }: { data: BrouillardData }) {
     const solde =
         (data.cash_inputs?.amount ?? 0) +
-        (data.sales_total ?? 0) -
+        (data.sales_total ?? 0) +
+        (data.payments?.amount ?? 0) -
         (data.expenses?.amount ?? 0) -
         (data.cash_deposits?.amount ?? 0);
 
@@ -216,6 +209,13 @@ function BrouillardView({ data }: { data: BrouillardData }) {
             color: 'amber',
         },
         {
+            label: 'Règlements Clients',
+            amount: data.payments?.amount ?? 0,
+            count: data.payments?.count ?? 0,
+            icon: <TrendingUp className="h-4 w-4 text-cyan-500" />,
+            color: 'cyan',
+        },
+        {
             label: 'Dépenses & Charges',
             amount: data.expenses?.amount ?? 0,
             count: data.expenses?.count ?? 0,
@@ -233,7 +233,7 @@ function BrouillardView({ data }: { data: BrouillardData }) {
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 {cards.map((c) => (
                     <div key={c.label} className="bg-card border border-border p-5 rounded-2xl shadow-sm">
                         <div className="flex items-center justify-between mb-4">
@@ -322,6 +322,14 @@ function RoadmapView({ sales }: { sales: any[] }) {
         </div>
     );
 }
+
+const REPORT_ROUTES: Record<string, string> = {
+    brouillard: 'drinks.reports.brouillard',
+    'sales-report': 'drinks.reports.sales',
+    'stock-report': 'drinks.reports.stock',
+    'client-report': 'drinks.reports.clients',
+    roadmap: 'drinks.reports.roadmap',
+};
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
@@ -413,7 +421,7 @@ params.date_to = dateTo;
                         key={key}
                         variant="ghost"
                         size="sm"
-                        onClick={() => router.visit(route(key === 'roadmap' ? 'drinks.reports.roadmap' : (key === 'brouillard' ? 'drinks.reports.brouillard' : `drinks.reports.${key.split('-')[0]}`), { current_team: slug }))}
+                        onClick={() => router.visit(route(REPORT_ROUTES[key], { current_team: slug }))}
                         className={`h-9 px-5 text-xs font-bold rounded-xl transition-all ${
                             _action === key 
                             ? 'bg-card text-foreground shadow-sm ring-1 ring-border' 

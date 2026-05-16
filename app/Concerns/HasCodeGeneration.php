@@ -10,8 +10,10 @@ trait HasCodeGeneration
     protected static function bootHasCodeGeneration(): void
     {
         static::creating(function ($model) {
-            if (empty($model->code)) {
-                $model->code = $model->generateUniqueCode();
+            $field = method_exists($model, 'getCodeField') ? $model->getCodeField() : 'code';
+
+            if (empty($model->{$field})) {
+                $model->{$field} = $model->generateUniqueCode();
             }
         });
     }
@@ -24,8 +26,6 @@ trait HasCodeGeneration
         $prefix = $this->getCodePrefix();
         $date = now()->format('Ymd');
 
-        // Count total for team to get sequence
-        // Using withoutGlobalScopes to ensure we don't miss any due to soft deletes or other scopes
         $count = static::withoutGlobalScopes()
             ->where('team_id', $this->team_id)
             ->count();
@@ -33,6 +33,14 @@ trait HasCodeGeneration
         $sequence = $count + 1;
 
         return "{$prefix}-{$date}-".str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Override in your model to use a different field name (default: 'code').
+     */
+    protected function getCodeField(): string
+    {
+        return 'code';
     }
 
     /**

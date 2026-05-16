@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Http\Controllers\Controller;
 use App\Models\GodmodeAuditLog;
 use App\Models\GodmodeSystemLog;
 use App\Models\Team;
@@ -10,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class GodmodeController
+class GodmodeController extends Controller
 {
     /**
      * Tableau de bord GODMODE - Vue complète du système
@@ -104,14 +105,14 @@ class GodmodeController
         }
 
         try {
-            $result = DB::select($request->query);
+            $result = DB::select($request->input('query'));
 
             $this->logGodmodeSystemAction(
                 $request->user(),
                 'direct_sql_execution',
                 'Requête SQL exécutée',
                 [
-                    'query_preview' => substr($request->query, 0, 100).'...',
+                    'query_preview' => substr($request->input('query'), 0, 100).'...',
                     'result_count' => count($result),
                 ]
             );
@@ -127,7 +128,7 @@ class GodmodeController
                 $request->user(),
                 'direct_sql_execution_error',
                 'Erreur exécution SQL: '.$e->getMessage(),
-                ['query' => substr($request->query, 0, 100)]
+                ['query' => substr($request->input('query'), 0, 100)]
             );
 
             return response()->json([
@@ -232,12 +233,11 @@ class GodmodeController
 
         $user = User::findOrFail($request->user_id);
 
-        // Soft delete l'utilisateur
-        $user->update(['deleted_at' => now()]);
+        $user->delete();
 
         $this->logGodmodeAction(
             $request->user(),
-            Team::first(),
+            null,
             'purge_user',
             [
                 'user_id' => $user->id,
@@ -294,11 +294,11 @@ class GodmodeController
     /**
      * Enregistre une action godmode
      */
-    private function logGodmodeAction(User $superAdmin, Team $team, string $action, array $changes = []): void
+    private function logGodmodeAction(User $superAdmin, ?Team $team, string $action, array $changes = []): void
     {
         GodmodeAuditLog::create([
             'super_admin_id' => $superAdmin->id,
-            'target_team_id' => $team->id,
+            'target_team_id' => $team?->id,
             'action' => $action,
             'changes' => $changes,
             'ip_address' => request()->ip(),

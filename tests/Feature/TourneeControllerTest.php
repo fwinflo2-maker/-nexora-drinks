@@ -27,7 +27,7 @@ test('tournees index retourne les tournées paginées avec chauffeur et nb livra
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('tournees/index')
-            ->has('routes')
+            ->has('tournees')
         );
 });
 
@@ -155,9 +155,10 @@ test('show refuse un accès cross-team', function () {
         'created_by' => $otherUser->id,
     ]);
 
+    // BelongsToTeam global scope returns 404 (not found) for cross-team resources
     $this->actingAs($user)
         ->get(route('tournees.show', ['current_team' => $user->currentTeam->slug, 'deliveryRoute' => $route->id]))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('show trie les livraisons par sequence_number', function () {
@@ -279,7 +280,7 @@ test('showDelivery retourne le détail d\'une livraison', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('tournees.livraisons.show', [
+        ->get(route('tournees.deliveries.show', [
             'current_team' => $team->slug,
             'deliveryRoute' => $route->id,
             'delivery' => $delivery->id,
@@ -317,7 +318,7 @@ test('updateDelivery met à jour le statut d\'une livraison', function () {
     ]);
 
     $this->actingAs($user)
-        ->patch(route('tournees.livraisons.update', [
+        ->patch(route('tournees.deliveries.update', [
             'current_team' => $team->slug,
             'deliveryRoute' => $route->id,
             'delivery' => $delivery->id,
@@ -349,7 +350,7 @@ test('showDelivery retourne client, order.items et navigation', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('tournees.livraisons.show', [
+        ->get(route('tournees.deliveries.show', [
             'current_team' => $team->slug,
             'deliveryRoute' => $route->id,
             'delivery' => $delivery->id,
@@ -378,7 +379,7 @@ test('showDelivery navigation: premier stop sans prev, dernier sans next', funct
     $d3 = Delivery::factory()->create(['team_id' => $team->id, 'route_id' => $route->id, 'client_id' => $client->id, 'order_id' => $order->id, 'sequence_number' => 3]);
 
     $this->actingAs($user)
-        ->get(route('tournees.livraisons.show', ['current_team' => $team->slug, 'deliveryRoute' => $route->id, 'delivery' => $d1->id]))
+        ->get(route('tournees.deliveries.show', ['current_team' => $team->slug, 'deliveryRoute' => $route->id, 'delivery' => $d1->id]))
         ->assertInertia(fn ($page) => $page
             ->where('navigation.prev_id', null)
             ->where('navigation.next_id', $d2->id)
@@ -387,7 +388,7 @@ test('showDelivery navigation: premier stop sans prev, dernier sans next', funct
         );
 
     $this->actingAs($user)
-        ->get(route('tournees.livraisons.show', ['current_team' => $team->slug, 'deliveryRoute' => $route->id, 'delivery' => $d3->id]))
+        ->get(route('tournees.deliveries.show', ['current_team' => $team->slug, 'deliveryRoute' => $route->id, 'delivery' => $d3->id]))
         ->assertInertia(fn ($page) => $page
             ->where('navigation.prev_id', $d2->id)
             ->where('navigation.next_id', null)
@@ -405,7 +406,7 @@ test('showDelivery refuse une livraison appartenant à une autre route', functio
     $delivery = Delivery::factory()->create(['team_id' => $team->id, 'route_id' => $route2->id, 'client_id' => $client->id, 'order_id' => $order->id]);
 
     $this->actingAs($user)
-        ->get(route('tournees.livraisons.show', [
+        ->get(route('tournees.deliveries.show', [
             'current_team' => $team->slug,
             'deliveryRoute' => $route1->id,
             'delivery' => $delivery->id,
@@ -432,7 +433,7 @@ test('updateDelivery accepte le statut partial avec les qtés livrées', functio
     ]);
 
     $this->actingAs($user)
-        ->patch(route('tournees.livraisons.update', [
+        ->patch(route('tournees.deliveries.update', [
             'current_team' => $team->slug,
             'deliveryRoute' => $route->id,
             'delivery' => $delivery->id,
@@ -461,7 +462,7 @@ test('updateDelivery rejette un statut invalide', function () {
     ]);
 
     $this->actingAs($user)
-        ->patch(route('tournees.livraisons.update', [
+        ->patch(route('tournees.deliveries.update', [
             'current_team' => $team->slug,
             'deliveryRoute' => $route->id,
             'delivery' => $delivery->id,

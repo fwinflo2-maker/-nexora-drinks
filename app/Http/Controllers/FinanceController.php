@@ -110,20 +110,11 @@ class FinanceController extends Controller
     public function rapports(Request $request, Team $current_team): Response
     {
         $twelveMonthsAgo = now()->subMonths(11)->startOfMonth();
-        $isSqlite = \DB::connection()->getDriverName() === 'sqlite';
 
-        $dateFmtCreatedAt = $isSqlite
-            ? "strftime('%Y-%m', created_at) as mois"
-            : "DATE_FORMAT(created_at, '%Y-%m') as mois";
-        $groupCreatedAt = $isSqlite
-            ? "strftime('%Y-%m', created_at)"
-            : "DATE_FORMAT(created_at, '%Y-%m')";
-        $dateFmtDate = $isSqlite
-            ? "strftime('%Y-%m', date) as mois"
-            : "DATE_FORMAT(date, '%Y-%m') as mois";
-        $groupDate = $isSqlite
-            ? "strftime('%Y-%m', date)"
-            : "DATE_FORMAT(date, '%Y-%m')";
+        $dateFmtCreatedAt = "DATE_FORMAT(created_at, '%Y-%m') as mois";
+        $groupCreatedAt = "DATE_FORMAT(created_at, '%Y-%m')";
+        $dateFmtDate = "DATE_FORMAT(date, '%Y-%m') as mois";
+        $groupDate = "DATE_FORMAT(date, '%Y-%m')";
 
         $revenusParMois = Invoice::where('team_id', $current_team->id)
             ->where('status', 'paid')

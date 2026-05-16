@@ -152,6 +152,7 @@ enum TeamPermission: string
     case DrinksCashDepositsView = 'drinks.cash_deposits:view';
     case DrinksCashDepositsCreate = 'drinks.cash_deposits:create';
     case DrinksCashDepositsUpdate = 'drinks.cash_deposits:update';
+    case DrinksCashDepositsDelete = 'drinks.cash_deposits:delete';
     case DrinksCashDepositsValidate = 'drinks.cash_deposits:validate';
 
     case DrinksPaymentsView = 'drinks.payments:view';
@@ -165,4 +166,67 @@ enum TeamPermission: string
     case DrinksReportsView = 'drinks.reports:view';
     case DrinksSettingsManage = 'drinks.settings:manage';
     case DrinksDashboardView = 'drinks.dashboard:view';
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Secteur HOTEL
+    // ───────────────────────────────────────────────────────────────────────
+
+    case HotelDashboardView = 'hotel.dashboard:view';
+
+    case HotelRoomsView = 'hotel.rooms:view';
+    case HotelRoomsCreate = 'hotel.rooms:create';
+    case HotelRoomsEdit = 'hotel.rooms:edit';
+    case HotelRoomsDelete = 'hotel.rooms:delete';
+
+    case HotelRoomTypesView = 'hotel.room_types:view';
+    case HotelRoomTypesCreate = 'hotel.room_types:create';
+    case HotelRoomTypesEdit = 'hotel.room_types:edit';
+    case HotelRoomTypesDelete = 'hotel.room_types:delete';
+
+    case HotelReservationsView = 'hotel.reservations:view';
+    case HotelReservationsCreate = 'hotel.reservations:create';
+    case HotelReservationsEdit = 'hotel.reservations:edit';
+    case HotelReservationsDelete = 'hotel.reservations:delete';
+    case HotelReservationsCheckin = 'hotel.reservations:checkin';
+    case HotelReservationsCheckout = 'hotel.reservations:checkout';
+    case HotelReservationsCancel = 'hotel.reservations:cancel';
+
+    case HotelGuestsView = 'hotel.guests:view';
+    case HotelGuestsCreate = 'hotel.guests:create';
+    case HotelGuestsEdit = 'hotel.guests:edit';
+
+    case HotelFoliosView = 'hotel.folios:view';
+    case HotelFoliosManage = 'hotel.folios:manage';
+
+    case HotelReportsView = 'hotel.reports:view';
+    case HotelReportsExport = 'hotel.reports:export';
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Secteur F&B (Restauration)
+    // ───────────────────────────────────────────────────────────────────────
+
+    case FnBDashboardView = 'fnb.dashboard:view';
+
+    case FnBMenuView = 'fnb.menu:view';
+    case FnBMenuCreate = 'fnb.menu:create';
+    case FnBMenuEdit = 'fnb.menu:edit';
+    case FnBMenuDelete = 'fnb.menu:delete';
+
+    case FnBCategoriesView = 'fnb.categories:view';
+    case FnBCategoriesManage = 'fnb.categories:manage';
+
+    case FnBTablesView = 'fnb.tables:view';
+    case FnBTablesManage = 'fnb.tables:manage';
+
+    case FnBOrdersView = 'fnb.orders:view';
+    case FnBOrdersCreate = 'fnb.orders:create';
+    case FnBOrdersEdit = 'fnb.orders:edit';
+    case FnBOrdersClose = 'fnb.orders:close';
+    case FnBOrdersCancel = 'fnb.orders:cancel';
+
+    case FnBKitchenView = 'fnb.kitchen:view';
+    case FnBKitchenUpdateStatus = 'fnb.kitchen:update_status';
+
+    case FnBReportsView = 'fnb.reports:view';
+    case FnBReportsExport = 'fnb.reports:export';
 }

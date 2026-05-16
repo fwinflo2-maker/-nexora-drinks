@@ -31,6 +31,7 @@ class UpdatePackagingRequest extends FormRequest
             'deposit_price' => ['required', 'numeric', 'min:0'],
             'packs_per_unit' => ['nullable', 'integer', 'min:1'],
             'is_active' => ['boolean'],
+            'is_returnable' => ['boolean'],
         ];
     }
 }

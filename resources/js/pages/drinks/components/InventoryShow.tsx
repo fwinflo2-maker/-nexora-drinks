@@ -11,10 +11,10 @@ export default function InventoryShow({ inventory }: { inventory: any }) {
 
     const handleAction = (actionRoute: string) => {
         if (!confirm('Êtes-vous sûr de vouloir effectuer cette action ?')) {
-return;
-}
+            return;
+        }
 
-        router.post(route(actionRoute, [team.slug, inventory.id]));
+        router.post(route(actionRoute, { current_team: team.slug, inventory: inventory.id }));
     };
 
     const getStatusBadge = (status: string) => {
@@ -60,7 +60,7 @@ return;
                     )}
                     {inventory.status === 'draft' && (
                         <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm">
-                            <Link href={route('drinks.inventories.edit', { current_team: team.slug, inventory: inventory.id })}>>
+                            <Link href={route('drinks.inventories.edit', { current_team: team.slug, inventory: inventory.id })}>
                                 <Pencil className="mr-2 h-4 w-4" /> Modifier
                             </Link>
                         </Button>

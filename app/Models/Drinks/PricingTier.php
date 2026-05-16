@@ -3,6 +3,7 @@
 namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
+use App\Concerns\LogsActivity;
 use Database\Factories\Drinks\PricingTierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PricingTier extends Model
 {
     /** @use HasFactory<PricingTierFactory> */
-    use BelongsToTeam, HasFactory;
+    use BelongsToTeam, HasFactory, LogsActivity;
 
     protected $table = 'drinks_pricing_tiers';
 

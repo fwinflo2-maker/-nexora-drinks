@@ -4,6 +4,7 @@ namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasCodeGeneration;
+use App\Concerns\LogsActivity;
 use App\Enums\Drinks\TransactionStatus;
 use App\Models\User;
 use Database\Factories\Drinks\InventoryFactory;
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Inventory extends Model
 {
     /** @use HasFactory<InventoryFactory> */
-    use BelongsToTeam, HasCodeGeneration, HasFactory;
+    use BelongsToTeam, HasCodeGeneration, HasFactory, LogsActivity;
 
     protected $table = 'drinks_inventories';
 

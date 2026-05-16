@@ -19,11 +19,7 @@ test('authenticated team owners see the admin dashboard', function () {
 
     $this->actingAs($user)
         ->get("/{$team->slug}/dashboard")
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('dashboard')
-            ->where('currentTeam.role', TeamRole::Owner->value)
-        );
+        ->assertRedirect("/{$team->slug}/drinks/dashboard");
 });
 
 test('authenticated team employees see a business-specific dashboard', function () {
@@ -34,10 +30,10 @@ test('authenticated team employees see a business-specific dashboard', function 
     $user->switchTeam($team);
 
     $this->actingAs($user)
-        ->get("/{$team->slug}/dashboard")
+        ->get("/{$team->slug}/drinks/dashboard")
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('dashboard')
+            ->component('drinks/dashboard')
             ->where('currentTeam.role', TeamRole::Commercial->value)
         );
 });

@@ -44,8 +44,8 @@ class MembresController extends Controller
                 'email' => $u->email,
                 'role' => $this->roleValue($u->pivot->role),
                 'roleLabel' => $this->roleEnum($u->pivot->role)?->label() ?? $this->roleValue($u->pivot->role),
-                'is_owner' => $u->id === $team->user_id,
-                'is_admin' => $u->teamRole($team) === TeamRole::Admin,
+                'is_owner' => $this->roleEnum($u->pivot->role) === TeamRole::Owner,
+                'is_admin' => $this->roleEnum($u->pivot->role) === TeamRole::Admin,
                 'blocked_at' => $u->blocked_at?->toIso8601String(),
             ]);
 
@@ -67,7 +67,7 @@ class MembresController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', 'in:'.$this->roleValues()],
         ]);
 
@@ -75,12 +75,15 @@ class MembresController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'current_team_id' => $current_team->id, // Assurer que le dashboard Drinks se charge directement
+            'current_team_id' => $team->id,
+            'email_verified_at' => now(),
         ]);
 
-        $current_team->members()->attach($user->id, ['role' => $validated['role']]);
+        $team->members()->attach($user->id, ['role' => $validated['role']]);
 
-        return back()->with('success', "Profil créé et ajouté à l'équipe.");
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Compte créé. L'employé peut se connecter immédiatement."]);
+
+        return back();
     }
 
     public function updateRole(Request $request, string $current_team, User $user): RedirectResponse
@@ -102,7 +105,9 @@ class MembresController extends Controller
 
         $team->members()->updateExistingPivot($user->id, ['role' => $validated['role']]);
 
-        return back()->with('success', 'Rôle mis à jour.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Rôle mis à jour.']);
+
+        return back();
     }
 
     public function updatePassword(Request $request, string $current_team, User $user): RedirectResponse
@@ -124,7 +129,9 @@ class MembresController extends Controller
 
         $user->update(['password' => Hash::make($validated['password'])]);
 
-        return back()->with('success', 'Mot de passe mis à jour.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Mot de passe mis à jour.']);
+
+        return back();
     }
 
     public function block(Request $request, string $current_team, User $user): RedirectResponse
@@ -143,7 +150,9 @@ class MembresController extends Controller
 
         $user->update(['blocked_at' => now()]);
 
-        return back()->with('success', 'Profil bloqué.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Compte bloqué.']);
+
+        return back();
     }
 
     public function unblock(Request $request, string $current_team, User $user): RedirectResponse
@@ -153,7 +162,9 @@ class MembresController extends Controller
 
         $user->update(['blocked_at' => null]);
 
-        return back()->with('success', 'Profil débloqué.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Compte débloqué.']);
+
+        return back();
     }
 
     public function updateProfile(Request $request, string $current_team, User $user): RedirectResponse
@@ -176,7 +187,9 @@ class MembresController extends Controller
 
         $user->update($validated);
 
-        return back()->with('success', 'Profil mis à jour.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Profil mis à jour.']);
+
+        return back();
     }
 
     public function remove(Request $request, string $current_team, User $user): RedirectResponse
@@ -199,14 +212,16 @@ class MembresController extends Controller
 
         $team->members()->detach($user->id);
 
-        return back()->with('success', 'Membre retiré.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Membre retiré de l\'équipe.']);
+
+        return back();
     }
 
     private function authorizeAdmin(User $user, Team $team): void
     {
         $role = $user->teamRole($team);
 
-        if ($role !== TeamRole::Admin && $role !== TeamRole::Owner) {
+        if ($role !== TeamRole::Admin && $role !== TeamRole::Owner && $role !== TeamRole::Gerant) {
             abort(403);
         }
     }

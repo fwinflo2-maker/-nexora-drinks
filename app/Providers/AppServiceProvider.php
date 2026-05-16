@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\CustomProfile;
 use App\Models\Drinks\Article;
 use App\Models\Drinks\CashDeposit;
 use App\Models\Drinks\CashInput;
@@ -23,7 +24,11 @@ use App\Models\Drinks\Setting;
 use App\Models\Drinks\StockMovement;
 use App\Models\Drinks\StockSnapshot;
 use App\Models\Drinks\Supplier;
+use App\Models\FnB\Order;
 use App\Models\FoodLot;
+use App\Models\Hotel\Reservation;
+use App\Models\Hotel\Room;
+use App\Policies\CustomProfilePolicy;
 use App\Policies\Drinks\ArticlePolicy;
 use App\Policies\Drinks\CashDepositPolicy;
 use App\Policies\Drinks\CashInputPolicy;
@@ -43,7 +48,10 @@ use App\Policies\Drinks\SettingPolicy;
 use App\Policies\Drinks\StockMovementPolicy;
 use App\Policies\Drinks\StockSnapshotPolicy;
 use App\Policies\Drinks\SupplierPolicy;
+use App\Policies\FnB\OrderPolicy;
 use App\Policies\FoodLotPolicy;
+use App\Policies\Hotel\ReservationPolicy;
+use App\Policies\Hotel\RoomPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +107,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(StockMovement::class, StockMovementPolicy::class);
         Gate::policy(StockSnapshot::class, StockSnapshotPolicy::class);
         Gate::policy(FoodLot::class, FoodLotPolicy::class);
+        Gate::policy(CustomProfile::class, CustomProfilePolicy::class);
+        Gate::policy(Reservation::class, ReservationPolicy::class);
+        Gate::policy(Room::class, RoomPolicy::class);
+        Gate::policy(Order::class, OrderPolicy::class);
     }
 
     /**

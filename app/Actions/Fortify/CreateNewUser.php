@@ -92,6 +92,12 @@ class CreateNewUser implements CreatesNewUsers
                 'updated_at' => now(),
             ]);
 
+            // Activate selected modules (drinks always included)
+            $selectedModules = array_unique(array_merge(['drinks'], (array) ($input['modules'] ?? [])));
+            foreach ($selectedModules as $module) {
+                $team->activateModule($module, $adminUser);
+            }
+
             // 3. Création du compte employé automatique (Optionnel, juste pour l'exemple)
             $employeeEmail = 'employe@'.$slug.'.com';
             $employeeUser = User::create([

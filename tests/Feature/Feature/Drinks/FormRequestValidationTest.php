@@ -15,7 +15,6 @@ test('StoreArticleRequest échoue si les champs requis sont absents', function (
     $validator = validator()->make([], $request->rules());
 
     expect($validator->fails())->toBeTrue()
-        ->and($validator->errors()->has('code'))->toBeTrue()
         ->and($validator->errors()->has('name'))->toBeTrue()
         ->and($validator->errors()->has('sale_price'))->toBeTrue()
         ->and($validator->errors()->has('category_id'))->toBeTrue();

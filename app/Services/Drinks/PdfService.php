@@ -3,6 +3,7 @@
 namespace App\Services\Drinks;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use Dompdf\Exception as DompdfException;
 use Illuminate\Http\Response;
 
 class PdfService
@@ -25,7 +26,23 @@ class PdfService
 
         $pdf->setPaper(...$this->paperOptions($format));
 
-        return $pdf->stream();
+        try {
+            return $pdf->stream();
+        } catch (DompdfException $e) {
+            // Retry without logo when image format is unsupported (e.g. webp without GD extension)
+            if (str_contains($e->getMessage(), 'imagecreatefrom') || str_contains($e->getMessage(), 'Cannot convert')) {
+                $data['team'] = isset($data['team']) ? clone $data['team'] : null;
+                if ($data['team']) {
+                    $data['team']->logo_path = null;
+                }
+                $pdf = Pdf::loadView($view, $data);
+                $pdf->setPaper(...$this->paperOptions($format));
+
+                return $pdf->stream();
+            }
+
+            throw $e;
+        }
     }
 
     /**

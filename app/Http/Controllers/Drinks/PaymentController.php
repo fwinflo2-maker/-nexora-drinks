@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Drinks;
 
+use App\Enums\Drinks\TransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Drinks\StorePaymentRequest;
-use App\Models\Drinks\Client;
 use App\Models\Drinks\Payment;
 use App\Models\Drinks\Sale;
 use App\Models\Team;

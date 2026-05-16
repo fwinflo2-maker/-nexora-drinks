@@ -31,9 +31,9 @@ class SettingController extends Controller
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
-                'role' => $u->pivot->role instanceof TeamRole ? $u->pivot->role->value : (string) $u->pivot->role,
-                'roleLabel' => ($u->pivot->role instanceof TeamRole ? $u->pivot->role : TeamRole::tryFrom((string) $u->pivot->role))?->label() ?? (string) $u->pivot->role,
-                'is_owner' => ($u->pivot->role instanceof TeamRole ? $u->pivot->role : TeamRole::tryFrom((string) $u->pivot->role)) === TeamRole::Owner,
+                'role' => $u->pivot->role?->value,
+                'roleLabel' => $u->pivot->role?->label(),
+                'is_owner' => $u->pivot->role === TeamRole::Owner,
                 'blocked_at' => $u->blocked_at?->toIso8601String(),
             ]);
 
@@ -62,7 +62,7 @@ class SettingController extends Controller
         }
 
         $validated = $request->validate([
-            'logo' => ['nullable', 'image', 'max:2048'],
+            'logo' => ['nullable', 'mimes:jpeg,jpg,png', 'max:2048'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
             'rccm' => ['nullable', 'string', 'max:50'],
@@ -76,9 +76,15 @@ class SettingController extends Controller
         }
 
         $settings = $current_team->settings_json ?? [];
-        $settings['phone'] = $validated['phone'];
-        $settings['address'] = $validated['address'];
-        $settings['rccm'] = $validated['rccm'];
+        if (array_key_exists('phone', $validated)) {
+            $settings['phone'] = $validated['phone'];
+        }
+        if (array_key_exists('address', $validated)) {
+            $settings['address'] = $validated['address'];
+        }
+        if (array_key_exists('rccm', $validated)) {
+            $settings['rccm'] = $validated['rccm'];
+        }
 
         $current_team->settings_json = $settings;
         $current_team->save();

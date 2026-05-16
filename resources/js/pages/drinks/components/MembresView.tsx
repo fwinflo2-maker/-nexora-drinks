@@ -41,7 +41,15 @@ function initials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-interface CreateForm { name: string; email: string; password: string; role: string }
+interface CreateForm { name: string; email: string; password: string; password_confirmation: string; role: string }
+
+const ROLE_MODULES: Record<string, { modules: string[]; desc: string }> = {
+    gerant:     { modules: ['Dashboard IA', 'Reporting Avancé', 'Validations', 'Performance'], desc: 'Pilotage complet. Peut tout voir et valider.' },
+    ops:        { modules: ['Approvisionnements', 'Fournisseurs', 'Inventaires', 'Pertes'], desc: 'Gestion des flux entrants et du stock opérationnel.' },
+    caissier:   { modules: ['Ventes', 'Consignes', 'Règlements', 'Clôture'], desc: 'Encaissements, clients et suivi des règlements.' },
+    comptable:  { modules: ['Charges', 'Apports', 'Versements', 'Bilans'], desc: 'Finance, charges, versements banque et bilans.' },
+    magasinier: { modules: ['Stocks', 'Emballages', 'Inventaires', 'Mouvements'], desc: 'Gestion physique du stock et des emballages.' },
+};
 
 export default function MembresView({ members, roles }: Props) {
     const { props } = usePage();
@@ -49,7 +57,7 @@ export default function MembresView({ members, roles }: Props) {
     const slug = team.slug || window.location.pathname.split('/')[1] || '';
 
     const [showCreate, setShowCreate] = useState(false);
-    const [createForm, setCreateForm] = useState<CreateForm>({ name: '', email: '', password: '', role: roles[0]?.value ?? '' });
+    const [createForm, setCreateForm] = useState<CreateForm>({ name: '', email: '', password: '', password_confirmation: '', role: roles[0]?.value ?? '' });
     const [createErrors, setCreateErrors] = useState<Partial<Record<keyof CreateForm, string>>>({});
     const [passwordModal, setPasswordModal] = useState<{ id: number; name: string } | null>(null);
     const [editProfileModal, setEditProfileModal] = useState<{ id: number; name: string; email: string } | null>(null);
@@ -61,11 +69,11 @@ export default function MembresView({ members, roles }: Props) {
         const action = member.blocked_at ? 'Débloquer' : 'Bloquer';
         if (!confirm(`${action} le profil de ${member.name} ?`)) return;
 
-        const url = member.blocked_at 
+        const url = member.blocked_at
             ? `/${slug}/drinks/membres/${member.id}/unblock`
             : `/${slug}/drinks/membres/${member.id}/block`;
 
-        router.post(url, {}, { preserveScroll: true });
+        router.patch(url, {}, { preserveScroll: true });
     };
 
     const handleCreate = () => {
@@ -74,7 +82,7 @@ export default function MembresView({ members, roles }: Props) {
         router.post(`/${slug}/drinks/membres/store`, createForm as any, {
             onSuccess: () => {
                 setShowCreate(false);
-                setCreateForm({ name: '', email: '', password: '', role: roles[0]?.value ?? '' });
+                setCreateForm({ name: '', email: '', password: '', password_confirmation: '', role: roles[0]?.value ?? '' });
             },
             onError: (errors) => setCreateErrors(errors as any),
             onFinish: () => setProcessing(false),
@@ -89,7 +97,7 @@ export default function MembresView({ members, roles }: Props) {
             return;
         }
 
-        router.post(`/${slug}/drinks/membres/${passwordModal.id}/password`, { password: newPassword }, {
+        router.patch(`/${slug}/drinks/membres/${passwordModal.id}/password`, { password: newPassword }, {
             onSuccess: () => {
                 setPasswordModal(null);
                 setNewPassword('');
@@ -102,13 +110,19 @@ export default function MembresView({ members, roles }: Props) {
 
     const handleEditProfileSave = () => {
         if (!editProfileModal) return;
-        router.post(`/${slug}/drinks/membres/${editProfileModal.id}/profile`, {
+        router.patch(`/${slug}/drinks/membres/${editProfileModal.id}/profile`, {
             name: editProfileModal.name,
-            email: editProfileModal.email
+            email: editProfileModal.email,
         }, {
             onSuccess: () => setEditProfileModal(null),
             preserveScroll: true,
         });
+    };
+
+    const handleRoleChange = (member: Member, newRole: string) => {
+        if (newRole === member.role) return;
+        if (!confirm(`Changer le rôle de ${member.name} vers "${roles.find(r => r.value === newRole)?.label}" ?`)) return;
+        router.patch(`/${slug}/drinks/membres/${member.id}/role`, { role: newRole }, { preserveScroll: true });
     };
 
     const handleRemove = (id: number, name: string) => {
@@ -194,9 +208,17 @@ export default function MembresView({ members, roles }: Props) {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center justify-end gap-1 lg:w-1/3 ml-auto">
+                                <div className="flex items-center justify-end gap-2 lg:w-1/3 ml-auto flex-wrap">
                                     {!member.is_owner && !member.is_admin && (
                                         <>
+                                            <Select value={member.role} onValueChange={(val) => handleRoleChange(member, val)}>
+                                                <SelectTrigger className="h-8 text-xs border-border bg-muted/30 rounded-lg w-36">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {roles.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
                                             <Button 
                                                 variant="ghost" 
                                                 size="sm" 
@@ -255,12 +277,12 @@ export default function MembresView({ members, roles }: Props) {
                                 </Button>
                             </div>
 
-                            <div className="space-y-5">
+                            <div className="space-y-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Nom Complet</label>
-                                    <input 
-                                        type="text" 
-                                        value={createForm.name} 
+                                    <input
+                                        type="text"
+                                        value={createForm.name}
                                         onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                                         className="w-full h-11 bg-muted/30 border-border rounded-xl px-4 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                                         placeholder="Jean Dupont"
@@ -269,21 +291,32 @@ export default function MembresView({ members, roles }: Props) {
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Adresse Email</label>
-                                    <input 
-                                        type="email" 
-                                        value={createForm.email} 
+                                    <input
+                                        type="email"
+                                        value={createForm.email}
                                         onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
                                         className="w-full h-11 bg-muted/30 border-border rounded-xl px-4 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                                         placeholder="jean@entreprise.com"
                                     />
                                     {createErrors.email && <p className="text-[10px] text-red-500 ml-1 font-medium">{createErrors.email}</p>}
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Rôle</label>
+                                    <Select value={createForm.role} onValueChange={(val) => setCreateForm(f => ({ ...f, role: val }))}>
+                                        <SelectTrigger className="h-11 bg-muted/30 border-border rounded-xl text-sm">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {roles.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Mot de passe</label>
-                                        <input 
-                                            type="password" 
-                                            value={createForm.password} 
+                                        <input
+                                            type="password"
+                                            value={createForm.password}
                                             onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                                             className="w-full h-11 bg-muted/30 border-border rounded-xl px-4 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                                             placeholder="••••••••"
@@ -291,37 +324,35 @@ export default function MembresView({ members, roles }: Props) {
                                         {createErrors.password && <p className="text-[10px] text-red-500 ml-1 font-medium">{createErrors.password}</p>}
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Rôle initial</label>
-                                        <Select value={createForm.role} onValueChange={(val) => setCreateForm(f => ({ ...f, role: val }))}>
-                                            <SelectTrigger className="h-11 bg-muted/30 border-border rounded-xl text-sm">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {roles.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
+                                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Confirmation</label>
+                                        <input
+                                            type="password"
+                                            value={createForm.password_confirmation}
+                                            onChange={e => setCreateForm(f => ({ ...f, password_confirmation: e.target.value }))}
+                                            className="w-full h-11 bg-muted/30 border-border rounded-xl px-4 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                                            placeholder="••••••••"
+                                        />
                                     </div>
                                 </div>
 
-                                {/* Role Description Helper */}
-                                <motion.div 
-                                    key={createForm.role}
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl"
-                                >
-                                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                                        <Shield className="h-3 w-3" /> Périmètre du rôle
-                                    </p>
-                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                        {createForm.role === 'gerant' && "Pilotage complet : stocks, ventes, finance et rapports. Peut tout valider."}
-                                        {createForm.role === 'ops' && "Opérations : approvisionnements, fournisseurs, inventaires et mouvements de stock."}
-                                        {createForm.role === 'magasinier' && "Terrain : gestion physique du stock, emballages, inventaires et pertes."}
-                                        {createForm.role === 'caissier' && "Ventes : encaissements, gestion des clients et suivi des règlements."}
-                                        {createForm.role === 'comptable' && "Finance : gestion des charges, apports, versements banque et brouillard."}
-                                        {createForm.role === 'admin' && "Administration : contrôle total, y compris la gestion de l'équipe."}
-                                    </p>
-                                </motion.div>
+                                {/* Role modules preview */}
+                                {ROLE_MODULES[createForm.role] && (
+                                    <motion.div
+                                        key={createForm.role}
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl"
+                                    >
+                                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                            <Shield className="h-3 w-3" /> Accès — {ROLE_MODULES[createForm.role].desc}
+                                        </p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {ROLE_MODULES[createForm.role].modules.map(m => (
+                                                <span key={m} className="text-[10px] bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-md font-semibold">{m}</span>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
 
                             <Button onClick={handleCreate} disabled={processing} className="w-full h-11 mt-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20">

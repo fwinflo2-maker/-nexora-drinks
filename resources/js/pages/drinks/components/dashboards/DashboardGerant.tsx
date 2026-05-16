@@ -23,6 +23,7 @@ import {
     SectionTitle,
     containerVariants
 } from './DashboardComponents';
+import { SalesTrendChart, ExpenseBreakdownChart } from './DashboardCharts';
 
 export default function DashboardGerant({ stats }: DashboardProps) {
     const { currentTeam } = usePage().props as any;
@@ -110,6 +111,12 @@ export default function DashboardGerant({ stats }: DashboardProps) {
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* ── Charts ───────────────────────────────────────────────── */}
+                <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+                    <SalesTrendChart data={stats.chart_data ?? []} />
+                    <ExpenseBreakdownChart data={stats.expense_data ?? []} />
                 </div>
 
                 {/* ── Quick Actions ────────────────────────────────────────── */}

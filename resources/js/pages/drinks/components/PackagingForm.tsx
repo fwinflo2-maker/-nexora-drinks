@@ -19,7 +19,8 @@ export default function PackagingForm({ _action, packaging }: { _action: string,
         name: item?.name ?? '',
         deposit_price: item?.deposit_price ?? 0,
         packs_per_unit: item?.packs_per_unit ?? 1,
-        is_active: item?.is_active ?? true
+        is_active: item?.is_active ?? true,
+        is_returnable: item?.is_returnable ?? true,
     });
 
     const handleSubmit = (e: FormEvent) => {
@@ -188,6 +189,18 @@ export default function PackagingForm({ _action, packaging }: { _action: string,
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-foreground">Emballage Actif</span>
                                     <span className="text-[10px] text-muted-foreground">Disponible pour les nouveaux articles</span>
+                                </div>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer p-4 bg-muted/20 rounded-2xl hover:bg-muted/40 transition-colors">
+                                <Checkbox
+                                    checked={data.is_returnable}
+                                    onCheckedChange={v => setData('is_returnable', !!v)}
+                                    className="rounded-md border-2 border-blue-500 data-[state=checked]:bg-blue-500"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-foreground">Avec emballage (consignable)</span>
+                                    <span className="text-[10px] text-muted-foreground">Décochez si cet emballage n'est pas retournable</span>
                                 </div>
                             </label>
                         </div>

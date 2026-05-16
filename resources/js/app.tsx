@@ -9,27 +9,44 @@ import SettingsLayout from '@/layouts/settings/layout';
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 window.route = function (name: string, params: Record<string, any> = {}) {
-    const team = params.current_team || params.team || '';
-    
-    // Dashboard Routes
-    if (name === 'dashboard.overview') {
-return `/${team}/dashboard`;
-}
+    const page = (window as any).page;
+    const pageTeam = page?.props?.currentTeam?.slug ?? '';
 
-    if (name === 'dashboard.food.overview') {
-return `/${team}/dashboard/food`;
-}
+    const normalizeParam = (value: any) => {
+        if (typeof value === 'string') {
+            return value;
+        }
 
-    if (name === 'dashboard.commercial') {
-return `/${team}/dashboard/commercial`;
-}
+        if (typeof value === 'number') {
+            return String(value);
+        }
 
-    // Drinks Routes
+        if (value && typeof value === 'object') {
+            return value.slug ?? value.id ?? '';
+        }
+
+        return '';
+    };
+
+    const team = normalizeParam(params.current_team || params.team || pageTeam);
     const base = team ? `/${team}/drinks` : '/drinks';
 
+    // Dashboard Routes
+    if (name === 'dashboard.overview') {
+        return `/${team}/dashboard`;
+    }
+
+    if (name === 'dashboard.food.overview') {
+        return `/${team}/dashboard/food`;
+    }
+
+    if (name === 'dashboard.commercial') {
+        return `/${team}/dashboard/commercial`;
+    }
+
     if (name === 'drinks.dashboard') {
-return `${base}/dashboard`;
-}
+        return `${base}/dashboard`;
+    }
 
     if (name.startsWith('drinks.reports.')) {
         const report = name.replace('drinks.reports.', '');
@@ -41,32 +58,46 @@ return `${base}/dashboard`;
         const parts = name.replace('drinks.', '').split('.');
         const module = parts[0];
         const action = parts[1];
-        const idKey = Object.keys(params).find(k => k !== 'current_team' && k !== 'team');
-        const id = idKey ? params[idKey] : '';
+        const idKey = Object.keys(params).find((key) => key !== 'current_team' && key !== 'team');
+        const id = normalizeParam(idKey ? params[idKey] : '');
 
+        // index, store → /module
         if (action === 'index' || action === 'store') {
-return `${base}/${module}`;
-}
+            return `${base}/${module}`;
+        }
 
+        // create → /module/create
         if (action === 'create') {
-return `${base}/${module}/create`;
-}
+            return `${base}/${module}/create`;
+        }
 
+        // show, update, destroy → /module/{id}
+        if (action === 'show' || action === 'update' || action === 'destroy') {
+            return `${base}/${module}/${id}`;
+        }
+
+        // edit → /module/{id}/edit
         if (action === 'edit') {
-return `${base}/${module}/${id}/edit`;
-}
+            return `${base}/${module}/${id}/edit`;
+        }
 
+        // no action → /module (e.g. drinks.logs, drinks.membres)
+        if (!action) {
+            return `${base}/${module}`;
+        }
+
+        // custom actions (validate, cancel-validation, allocate, pdf, deconsign, …)
         if (id) {
-return `${base}/${module}/${id}/${action === 'show' ? '' : action}`.replace(/\/$/, '');
-}
+            return `${base}/${module}/${id}/${action}`;
+        }
 
         return `${base}/${module}/${action}`;
     }
 
     // Fallback to home or the name itself if it looks like a path
     if (name === 'home') {
-return '/';
-}
+        return '/';
+    }
 
     return name.startsWith('/') ? name : `/${name}`;
 };

@@ -1,36 +1,72 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Eye, ArrowUpDown, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
+import { Eye, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
 import React from 'react';
 import type { Team } from '@/types';
 import { Badge } from '@/components/ui/badge';
 
+// Kinds that add stock (matches StockMovementKind::isPositive())
+const POSITIVE_KINDS = new Set([
+    'procurement_in',
+    'cession_in',
+    'frigo_in',
+    'consignment_return',
+]);
+
+const ADJUST_KINDS = new Set(['inventory_adjust']);
+
+const KIND_LABELS: Record<string, string> = {
+    procurement_in: 'Entrée appro.',
+    sale_out: 'Sortie vente',
+    cession_in: 'Cession reçue',
+    cession_out: 'Cession émise',
+    frigo_in: 'Entrée frigo',
+    frigo_out: 'Sortie frigo',
+    inventory_adjust: 'Ajustement',
+    loss: 'Perte',
+    consignment_out: 'Consignation',
+    consignment_return: 'Retour conso.',
+};
+
+function isPositive(kind: string): boolean {
+    return POSITIVE_KINDS.has(kind);
+}
+
+function MovementBadge({ kind }: { kind: string }) {
+    if (!kind) return <Badge variant="outline">Inconnu</Badge>;
+
+    if (POSITIVE_KINDS.has(kind)) {
+        return (
+            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1 font-bold">
+                <TrendingUp className="h-3 w-3" />
+                {KIND_LABELS[kind] ?? kind}
+            </Badge>
+        );
+    }
+
+    if (ADJUST_KINDS.has(kind)) {
+        return (
+            <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 gap-1 font-bold">
+                <RefreshCcw className="h-3 w-3" />
+                {KIND_LABELS[kind] ?? kind}
+            </Badge>
+        );
+    }
+
+    return (
+        <Badge className="bg-rose-500/10 text-rose-600 border-rose-500/20 gap-1 font-bold">
+            <TrendingDown className="h-3 w-3" />
+            {KIND_LABELS[kind] ?? kind}
+        </Badge>
+    );
+}
+
 export default function StockMovementIndex({ stockMovements }: { stockMovements: any }) {
     const { currentTeam } = usePage().props as any;
     const team = currentTeam as Team;
-    
-    // Safety check for items
-    const items = Array.isArray(stockMovements) 
-        ? stockMovements 
-        : (stockMovements?.data || []);
 
-    const getMovementBadge = (type: string) => {
-        if (!type) return <Badge variant="outline">Inconnu</Badge>;
-        
-        switch (type.toLowerCase()) {
-            case 'in':
-            case 'entry':
-            case 'addition':
-                return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 gap-1"><TrendingUp className="h-3 w-3" /> Entrée</Badge>;
-            case 'out':
-            case 'exit':
-            case 'removal':
-                return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 gap-1"><TrendingDown className="h-3 w-3" /> Sortie</Badge>;
-            case 'adjustment':
-                return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 gap-1"><RefreshCcw className="h-3 w-3" /> Ajustement</Badge>;
-            default:
-                return <Badge variant="outline">{type}</Badge>;
-        }
-    };
+    const items = Array.isArray(stockMovements)
+        ? stockMovements
+        : (stockMovements?.data || []);
 
     if (!team) {
         return <div className="p-8 text-center text-muted-foreground">Erreur : Équipe non identifiée.</div>;
@@ -44,7 +80,7 @@ export default function StockMovementIndex({ stockMovements }: { stockMovements:
                     <p className="text-sm text-muted-foreground">Historique complet des entrées et sorties d'articles.</p>
                 </div>
             </div>
-            
+
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -63,35 +99,49 @@ export default function StockMovementIndex({ stockMovements }: { stockMovements:
                                 <tr>
                                     <td colSpan={6} className="p-12 text-center text-muted-foreground italic">Aucun mouvement trouvé.</td>
                                 </tr>
-                            ) : items.map((item: any) => (
-                                <tr key={item.id} className="hover:bg-muted/20 transition-colors group">
-                                    <td className="p-4 align-middle whitespace-nowrap text-muted-foreground">
-                                        {item.created_at ? new Date(item.created_at).toLocaleString('fr-FR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : '-'}
-                                    </td>
-                                    <td className="p-4 align-middle font-medium text-foreground">{item.article?.name || 'Article inconnu'}</td>
-                                    <td className="p-4 align-middle">{getMovementBadge(item.type)}</td>
-                                    <td className={`p-4 align-middle text-right font-bold ${item.type === 'in' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                        {item.type === 'in' ? '+' : '-'}{item.quantity}
-                                    </td>
-                                    <td className="p-4 align-middle text-xs text-muted-foreground capitalize">
-                                        {item.movable_type ? item.movable_type.split('\\').pop() : 'Manuel'}
-                                    </td>
-                                    <td className="p-4 align-middle text-right">
-                                        <Link 
-                                            href={route('drinks.stock-movements.show', { current_team: team.slug, stock_movement: item.id })} 
-                                            className="inline-flex items-center justify-center h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
+                            ) : items.map((item: any) => {
+                                const kind: string = item.kind ?? '';
+                                const positive = isPositive(kind);
+                                const adjust = ADJUST_KINDS.has(kind);
+
+                                return (
+                                    <tr key={item.id} className="hover:bg-muted/20 transition-colors group">
+                                        <td className="p-4 align-middle whitespace-nowrap text-muted-foreground">
+                                            {item.document_date
+                                                ? new Date(item.document_date).toLocaleDateString('fr-FR', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                })
+                                                : '-'}
+                                        </td>
+                                        <td className="p-4 align-middle font-medium text-foreground">{item.article?.name || 'Article inconnu'}</td>
+                                        <td className="p-4 align-middle">
+                                            <MovementBadge kind={kind} />
+                                        </td>
+                                        <td className={`p-4 align-middle text-right font-bold tabular-nums ${
+                                            adjust
+                                                ? 'text-amber-600'
+                                                : positive
+                                                    ? 'text-emerald-600'
+                                                    : 'text-rose-600'
+                                        }`}>
+                                            {adjust ? '±' : positive ? '+' : '−'}{item.quantity}
+                                        </td>
+                                        <td className="p-4 align-middle text-xs text-muted-foreground capitalize">
+                                            {item.source_type ? item.source_type.split('\\').pop() : 'Manuel'}
+                                        </td>
+                                        <td className="p-4 align-middle text-right">
+                                            <Link
+                                                href={route('drinks.stock-movements.show', { current_team: team.slug, stock_movement: item.id })}
+                                                className="inline-flex items-center justify-center h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

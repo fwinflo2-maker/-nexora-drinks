@@ -54,6 +54,11 @@ class HandleInertiaRequests extends Middleware
                     'role' => $m->pivot->role,
                 ])->values()
                 : [],
+            'team_modules' => fn () => $user?->currentTeam
+                ? $user->currentTeam->activeModules()->pluck('module')
+                : [],
+            'has_hotel' => fn () => $user?->currentTeam?->hasModule('hotel') ?? false,
+            'has_fnb' => fn () => $user?->currentTeam?->hasModule('fnb') ?? false,
         ];
     }
 }

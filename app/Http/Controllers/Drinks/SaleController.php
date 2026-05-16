@@ -14,6 +14,7 @@ use App\Models\Team;
 use App\Services\Drinks\PdfService;
 use App\Services\Drinks\SaleService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -27,18 +28,39 @@ class SaleController extends Controller
         private readonly PdfService $pdfService,
     ) {}
 
-    public function index(Team $current_team): InertiaResponse
+    public function index(Request $request, Team $current_team): InertiaResponse
     {
         Gate::authorize('viewAny', Sale::class);
 
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $sort = $request->get('sort', 'document_date');
+        $direction = $request->get('direction', 'desc');
+
+        $allowedSorts = ['document_date', 'total_ttc', 'code'];
+        $sort = in_array($sort, $allowedSorts, true) ? $sort : 'document_date';
+        $direction = $direction === 'asc' ? 'asc' : 'desc';
+
         $sales = $current_team->drinksSales()
             ->with('client')
-            ->orderByDesc('document_date')
-            ->orderByDesc('id')
-            ->paginate(20);
+            ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhereHas('client', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+            }))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->orderBy($sort, $direction)
+            ->when($sort !== 'id', fn ($q) => $q->orderByDesc('id'))
+            ->paginate(20)
+            ->withQueryString();
 
         return Inertia::render('drinks/sales/index', [
             'sales' => $sales,
+            'filters' => [
+                'search' => $search ?? '',
+                'status' => $status ?? '',
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 

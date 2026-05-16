@@ -16,7 +16,7 @@ export default function ProcurementShow({ procurement }: { procurement: any }) {
             return;
         }
 
-        router.post(route(actionRoute, [team.slug, procurement.id]));
+        router.post(route(actionRoute, { current_team: team.slug, id: procurement.id }));
     };
 
     const handlePrint = () => {

@@ -14,6 +14,7 @@ import {
     Truck,
     Settings,
     Users,
+    PackageX,
 } from 'lucide-react';
 import React from 'react';
 import type { DashboardProps } from './DashboardComponents';
@@ -26,6 +27,7 @@ import {
     SectionTitle,
     containerVariants
 } from './DashboardComponents';
+import { SalesTrendChart, ExpenseBreakdownChart } from './DashboardCharts';
 
 export default function DashboardAdmin({ stats }: DashboardProps) {
     const { currentTeam } = usePage().props as any;
@@ -112,6 +114,14 @@ export default function DashboardAdmin({ stats }: DashboardProps) {
                                 value={formatNumber(stats.articles_count)}
                                 accent="text-orange-500"
                             />
+                            <KpiCard
+                                icon={<PackageX className="h-5 w-5" />}
+                                label="Ruptures de Stock"
+                                value={formatNumber(stats.ruptures_count)}
+                                sub={stats.ruptures_count && stats.ruptures_count > 0 ? "Articles épuisés" : "Aucune rupture"}
+                                accent="text-rose-600"
+                                alert={!!stats.ruptures_count && stats.ruptures_count > 0}
+                            />
                             {stats.low_stock_count && stats.low_stock_count > 0 ? (
                                 <KpiCard
                                     icon={<AlertTriangle className="h-5 w-5" />}
@@ -138,6 +148,12 @@ export default function DashboardAdmin({ stats }: DashboardProps) {
                             />
                         </div>
                     </div>
+                </div>
+
+                {/* ── Charts ───────────────────────────────────────────────── */}
+                <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+                    <SalesTrendChart data={stats.chart_data ?? []} />
+                    <ExpenseBreakdownChart data={stats.expense_data ?? []} />
                 </div>
 
                 {/* ── Quick Actions (Admin — Tous les modules) ─────────────── */}

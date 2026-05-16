@@ -37,10 +37,10 @@ class OtpController extends Controller
             ], 500);
         }
 
-        $otp = sprintf('%06d', mt_rand(1, 999999));
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         Cache::put('otp_'.$request->email, $otp, now()->addMinutes(15));
 
-        Log::info('OTP généré', ['email' => $request->email, 'otp' => $otp]);
+        Log::info('OTP généré', ['email' => $request->email]);
 
         try {
             Mail::raw(
@@ -80,11 +80,11 @@ class OtpController extends Controller
         $cachedOtp = Cache::get('otp_'.$request->email);
 
         Log::info('OTP comparaison', [
-            'cached' => $cachedOtp,
-            'received' => $request->otp,
+            'email' => $request->email,
+            'has_cached' => $cachedOtp !== null,
         ]);
 
-        if (! $cachedOtp || $cachedOtp !== $request->otp) {
+        if (! $cachedOtp || ! hash_equals($cachedOtp, (string) $request->otp)) {
             throw ValidationException::withMessages([
                 'otp' => ['Le code est invalide ou a expiré.'],
             ]);

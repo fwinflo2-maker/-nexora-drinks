@@ -131,7 +131,7 @@ test('ConsignmentController::index fonctionne via route model binding', function
     $team = $user->currentTeam;
 
     $this->actingAs($user)
-        ->get(route('consignments.index', ['current_team' => $team->slug]))
+        ->get(route('consignations.index', ['current_team' => $team->slug]))
         ->assertOk();
 });
 
@@ -143,8 +143,10 @@ test('ConsignmentController::storeMovement fonctionne via route model binding', 
     $client = Client::factory()->create(['team_id' => $team->id]);
 
     $this->actingAs($user)
-        ->post(route('consignments.movement', ['current_team' => $team->slug]), [
-            'client_id' => $client->id,
+        ->post(route('consignations.movements.store', [
+            'current_team' => $team->slug,
+            'client' => $client->id,
+        ]), [
             'packaging_type_id' => $packagingType->id,
             'movement_type' => 'out',
             'quantity' => 5,

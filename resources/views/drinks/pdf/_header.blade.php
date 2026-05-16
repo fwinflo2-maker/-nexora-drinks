@@ -5,9 +5,19 @@
       $docType – (optional) subtitle below name, e.g. "Facture de vente"
 --}}
 <div class="pdf-header">
-    @if($team->logo_path && file_exists(storage_path('app/public/' . $team->logo_path)))
+    @php
+        $logoSrc = null;
+        if ($team->logo_path) {
+            $logoFullPath = storage_path('app/public/' . $team->logo_path);
+            $logoExt = strtolower(pathinfo($logoFullPath, PATHINFO_EXTENSION));
+            if (file_exists($logoFullPath) && $logoExt !== 'webp') {
+                $logoSrc = 'file:///' . str_replace('\\', '/', $logoFullPath);
+            }
+        }
+    @endphp
+    @if($logoSrc)
     <div class="pdf-header-logo">
-        <img src="{{ storage_path('app/public/' . $team->logo_path) }}" alt="{{ $team->name }}" class="logo-img">
+        <img src="{{ $logoSrc }}" alt="{{ $team->name }}" class="logo-img">
     </div>
     @endif
     <div class="pdf-header-info">

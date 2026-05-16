@@ -2,9 +2,17 @@
 
 use App\Http\Controllers\Auth\NexaChatController;
 use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\ConsignationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Drinks;
+use App\Http\Controllers\EquipeController;
+use App\Http\Controllers\FactureController;
+use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\StockController;
 use App\Http\Controllers\Teams\TeamInvitationController;
+use App\Http\Controllers\TourneeController;
+use App\Http\Middleware\CheckModuleAccess;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Http\Request;
@@ -16,28 +24,25 @@ Route::inertia('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
-Route::post('/send-otp', [OtpController::class, 'sendOtp'])->name('otp.send');
-Route::post('/verify-otp', [OtpController::class, 'verifyOtp'])->name('otp.verify');
-Route::post('/nexa-chat', [NexaChatController::class, 'handleChat'])->name('nexa.chat');
+Route::post('/send-otp', [OtpController::class, 'sendOtp'])->name('otp.send')->middleware('throttle:5,1');
+Route::post('/verify-otp', [OtpController::class, 'verifyOtp'])->name('otp.verify')->middleware('throttle:10,1');
+Route::post('/nexa-chat', [NexaChatController::class, 'handleChat'])->name('nexa.chat')->middleware('throttle:30,1');
 
 // ── Route de redirection après connexion (Fortify utilise /dashboard) ────────
 Route::middleware(['auth'])->get('/dashboard', function (Request $request) {
     $user = $request->user();
 
-    // Si c'est un super admin, on le redirige vers le super dashboard
     if ($user->nexora_role === 'super_admin') {
         return redirect()->route('super-admin.dashboard');
     }
 
-    // Sinon, on le redirige vers le dashboard overview de sa première équipe
     $team = $user->teams()->first();
     if ($team) {
         return redirect()->route('dashboard.overview', ['current_team' => $team->slug ?? $team->id]);
     }
 
-    // S'il n'a pas d'équipe, on le renvoie à l'accueil
     return redirect()->route('home');
-});
+})->name('dashboard');
 
 // ── Routes Super Admin ───────────────────────────────────────────────────────
 Route::prefix('super-admin')
@@ -66,6 +71,11 @@ Route::prefix('super-admin')
             // Paramètres globaux et système
             Route::post('system/maintenance', [DashboardController::class, 'toggleMaintenance'])->name('system.maintenance');
             Route::post('settings/broadcast-message', [DashboardController::class, 'broadcastMessage'])->name('settings.broadcast');
+
+            // ── Modules ──────────────────────────────────────────────────────────────
+            Route::get('tenants/{team:id}/modules', [ModuleController::class, 'index'])->name('tenants.modules.index');
+            Route::post('tenants/{team:id}/modules/{module}/activate', [ModuleController::class, 'activate'])->name('tenants.modules.activate');
+            Route::post('tenants/{team:id}/modules/{module}/deactivate', [ModuleController::class, 'deactivate'])->name('tenants.modules.deactivate');
         });
     });
 
@@ -83,16 +93,73 @@ Route::prefix('{current_team}')
         Route::get('dashboard/profiles', [DashboardController::class, 'profiles'])->name('dashboard.profiles');
         Route::get('dashboard/agent', [DashboardController::class, 'agent'])->name('dashboard.agent');
 
+        // Dashboard — Hotel + F&B bridge (Mode 3)
+        Route::get('dashboard/hotel-fnb', [DashboardController::class, 'hotelFnB'])->name('dashboard.hotel-fnb');
+
+        // ── Consignations ─────────────────────────────────────────────────────────────
+        Route::prefix('consignations')->name('consignations.')->group(function () {
+            Route::get('/', [ConsignationController::class, 'index'])->name('index');
+            Route::post('/', [ConsignationController::class, 'store'])->name('store');
+            Route::get('{client}', [ConsignationController::class, 'show'])->name('show');
+            Route::post('{client}/mouvements', [ConsignationController::class, 'storeMovement'])->name('movements.store');
+        });
+
+        // ── Equipe ─────────────────────────────────────────────────────────────────
+        Route::prefix('equipe')->name('equipe.')->group(function () {
+            Route::get('/', [EquipeController::class, 'index'])->name('index');
+            Route::post('/', [EquipeController::class, 'store'])->name('store');
+            Route::patch('{membership}', [EquipeController::class, 'update'])->name('update');
+            Route::delete('{membership}', [EquipeController::class, 'destroy'])->name('destroy');
+        });
+
+        // ── Factures ───────────────────────────────────────────────────────────────
+        Route::prefix('factures')->name('factures.')->group(function () {
+            Route::get('/', [FactureController::class, 'index'])->name('index');
+            Route::post('/', [FactureController::class, 'store'])->name('store');
+            Route::get('{invoice}', [FactureController::class, 'show'])->name('show');
+            Route::patch('{invoice}', [FactureController::class, 'update'])->name('update');
+            Route::delete('{invoice}', [FactureController::class, 'destroy'])->name('destroy');
+            Route::post('{invoice}/paiements', [FactureController::class, 'storePaiement'])->name('paiements.store');
+        });
+
+        // ── Finances ───────────────────────────────────────────────────────────────
+        Route::prefix('finances')->name('finances.')->group(function () {
+            Route::get('/', [FinanceController::class, 'index'])->name('index');
+            Route::get('rapports', [FinanceController::class, 'rapports'])->name('rapports');
+            Route::post('depenses', [FinanceController::class, 'storeDepense'])->name('depenses.store');
+            Route::delete('depenses/{expense}', [FinanceController::class, 'destroyDepense'])->name('depenses.destroy');
+        });
+
+        // ── Stocks ─────────────────────────────────────────────────────────────────
+        Route::prefix('stocks')->name('stocks.')->group(function () {
+            Route::get('/', [StockController::class, 'index'])->name('index');
+            Route::get('mouvements', [StockController::class, 'mouvements'])->name('mouvements');
+            Route::post('mouvements', [StockController::class, 'storeMovement'])->name('mouvements.store');
+        });
+
+        // ── Tournées ───────────────────────────────────────────────────────────────
+        Route::prefix('tournees')->name('tournees.')->group(function () {
+            Route::get('/', [TourneeController::class, 'index'])->name('index');
+            Route::post('/', [TourneeController::class, 'store'])->name('store');
+            Route::get('{deliveryRoute}', [TourneeController::class, 'show'])->name('show');
+            Route::patch('{deliveryRoute}', [TourneeController::class, 'update'])->name('update');
+            Route::delete('{deliveryRoute}', [TourneeController::class, 'destroy'])->name('destroy');
+            Route::get('{deliveryRoute}/livraisons/{delivery}', [TourneeController::class, 'showDelivery'])->name('deliveries.show');
+            Route::patch('{deliveryRoute}/livraisons/{delivery}', [TourneeController::class, 'updateDelivery'])->name('deliveries.update');
+            Route::post('{deliveryRoute}/collectes', [TourneeController::class, 'storeCollection'])->name('collections.store');
+        });
+
         // ── Drinks ────────────────────────────────────────────────────────────────────
-        Route::prefix('drinks')->name('drinks.')->group(function () {
+        Route::prefix('drinks')->name('drinks.')->middleware(CheckModuleAccess::class.':drinks')->group(function () {
             Route::resource('articles', Drinks\ArticleController::class)->parameters(['articles' => 'article']);
             Route::resource('categories', Drinks\CategoryController::class)->except(['show'])->parameters(['categories' => 'category']);
             Route::resource('pricing-tiers', Drinks\PricingTierController::class)->except(['show'])->parameters(['pricing-tiers' => 'pricingTier']);
+            Route::post('clients/quick-store', [Drinks\ClientController::class, 'quickStore'])->name('clients.quick-store');
             Route::resource('clients', Drinks\ClientController::class)->parameters(['clients' => 'client']);
             Route::resource('suppliers', Drinks\SupplierController::class)->except(['show'])->parameters(['suppliers' => 'supplier']);
             Route::resource('packagings', Drinks\PackagingController::class)->except(['show'])->parameters(['packagings' => 'packaging']);
-            Route::resource('settings', Drinks\SettingController::class)->only(['index', 'update']);
-            Route::post('settings/branding', [Drinks\SettingController::class, 'updateBranding'])->name('settings.update-branding');
+            Route::resource('settings', Drinks\SettingController::class)->only(['update']);
+            Route::post('settings/update-branding', [Drinks\SettingController::class, 'updateBranding'])->name('settings.update-branding');
             Route::resource('procurements', Drinks\ProcurementController::class);
             Route::post('procurements/{procurement}/validate', [Drinks\ProcurementController::class, 'validateProcurement'])->name('procurements.validate');
             Route::post('procurements/{procurement}/cancel-validation', [Drinks\ProcurementController::class, 'cancelValidation'])->name('procurements.cancel-validation');
@@ -150,10 +217,11 @@ Route::prefix('{current_team}')
             // ── Membres (gestion d'équipe)
             Route::get('membres', [Drinks\MembresController::class, 'index'])->name('membres.index');
             Route::post('membres/store', [Drinks\MembresController::class, 'store'])->name('membres.store');
-            Route::post('membres/{user}/password', [Drinks\MembresController::class, 'updatePassword'])->name('membres.update-password');
-            Route::post('membres/{user}/block', [Drinks\MembresController::class, 'block'])->name('membres.block');
-            Route::post('membres/{user}/unblock', [Drinks\MembresController::class, 'unblock'])->name('membres.unblock');
-            Route::post('membres/{user}/profile', [Drinks\MembresController::class, 'updateProfile'])->name('membres.update-profile');
+            Route::patch('membres/{user}/password', [Drinks\MembresController::class, 'updatePassword'])->name('membres.update-password');
+            Route::patch('membres/{user}/block', [Drinks\MembresController::class, 'block'])->name('membres.block');
+            Route::patch('membres/{user}/unblock', [Drinks\MembresController::class, 'unblock'])->name('membres.unblock');
+            Route::patch('membres/{user}/profile', [Drinks\MembresController::class, 'updateProfile'])->name('membres.update-profile');
+            Route::patch('membres/{user}/role', [Drinks\MembresController::class, 'updateRole'])->name('membres.update-role');
             Route::post('membres/{user}/remove', [Drinks\MembresController::class, 'remove'])->name('membres.remove');
             // ── Agent IA ──────────────────────────────────────────────────────────────
             Route::post('agent/chat', [Drinks\AgentChatController::class, 'chat'])->name('agent.chat');
@@ -163,18 +231,18 @@ Route::prefix('{current_team}')
 // ── Autres routes authentifiées ──────────────────────────────────────────────
 Route::middleware(['auth'])->group(function () {
     Route::get('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');
-    Route::get('/pending-approval', function (Illuminate\Http\Request $request) {
+    Route::get('/pending-approval', function (Request $request) {
         $user = $request->user();
         $team = $user?->currentTeam;
-        
+
         // On considère suspendu si le compte est bloqué ou si l'équipe est inactive
         // (Les nouveaux comptes sont aussi inactifs, mais on peut différencier par la date de création si besoin)
-        $isSuspended = ($user && $user->blocked_at) || ($team && !$team->is_active && $team->created_at->diffInMinutes(now()) > 5);
+        $isSuspended = ($user && $user->blocked_at) || ($team && ! $team->is_active && $team->created_at->diffInMinutes(now()) > 5);
 
         return Inertia::render('auth/pending-approval', [
-            'isSuspended' => $isSuspended
+            'isSuspended' => $isSuspended,
         ]);
-    })->name('pending-approval')->middleware(['auth']);
+    })->name('pending-approval');
 });
 
 // TODO: create resources/js/pages/Onboarding/NexoraOnboarding.tsx before re-enabling

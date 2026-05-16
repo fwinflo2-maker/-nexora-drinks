@@ -9,7 +9,9 @@ use App\Http\Requests\Drinks\StoreClientRequest;
 use App\Http\Requests\Drinks\UpdateClientRequest;
 use App\Models\Drinks\Client;
 use App\Models\Team;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -78,6 +80,20 @@ class ClientController extends Controller
             'current_team' => $current_team->slug,
             'client' => $client,
         ]);
+    }
+
+    public function quickStore(Request $request, Team $current_team): JsonResponse
+    {
+        Gate::authorize('create', Client::class);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+        ]);
+
+        $client = $current_team->drinksClients()->create($validated);
+
+        return response()->json(['id' => $client->id, 'name' => $client->name]);
     }
 
     public function destroy(Team $current_team, Client $client): RedirectResponse

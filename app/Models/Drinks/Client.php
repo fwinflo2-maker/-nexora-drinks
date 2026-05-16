@@ -4,6 +4,7 @@ namespace App\Models\Drinks;
 
 use App\Concerns\BelongsToTeam;
 use App\Concerns\HasCodeGeneration;
+use App\Concerns\LogsActivity;
 use Database\Factories\Drinks\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Client extends Model
 {
     /** @use HasFactory<ClientFactory> */
-    use BelongsToTeam, HasCodeGeneration, HasFactory;
+    use BelongsToTeam, HasCodeGeneration, HasFactory, LogsActivity;
 
     protected $table = 'drinks_clients';
 

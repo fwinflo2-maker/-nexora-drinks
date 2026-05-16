@@ -1,7 +1,7 @@
 import { useForm, usePage, router } from '@inertiajs/react';
-import { Save, ArrowLeft, Plus, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Save, ArrowLeft, Plus, Trash2, CheckCircle, AlertTriangle, UserPlus, X } from 'lucide-react';
 import type { FormEvent } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,9 +18,48 @@ type SaleFormProps = {
 
 type Line = { article_id: string; quantity: number; unit_price: number };
 
-export default function SaleForm({ _action, clients = [], articles = [], kinds = [], sale }: SaleFormProps) {
+export default function SaleForm({ _action, clients: initialClients = [], articles = [], kinds = [], sale }: SaleFormProps) {
     const { currentTeam } = usePage().props;
     const team = currentTeam as Team;
+
+    const [clients, setClients] = useState(initialClients);
+    const [showAddClient, setShowAddClient] = useState(false);
+    const [newClientName, setNewClientName] = useState('');
+    const [newClientPhone, setNewClientPhone] = useState('');
+    const [addingClient, setAddingClient] = useState(false);
+    const [addClientError, setAddClientError] = useState('');
+
+    const handleAddClient = async () => {
+        if (!newClientName.trim()) {
+            setAddClientError('Le nom est requis.');
+            return;
+        }
+        setAddingClient(true);
+        setAddClientError('');
+        try {
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+            const res = await fetch(route('drinks.clients.quick-store', { current_team: team.slug }), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify({ name: newClientName.trim(), phone: newClientPhone.trim() || null }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                setAddClientError(err.message ?? 'Erreur lors de la création.');
+                return;
+            }
+            const created = await res.json();
+            setClients(prev => [...prev, { id: created.id, name: created.name }].sort((a, b) => a.name.localeCompare(b.name)));
+            setData('client_id', String(created.id));
+            setNewClientName('');
+            setNewClientPhone('');
+            setShowAddClient(false);
+        } catch {
+            setAddClientError('Erreur réseau. Réessayez.');
+        } finally {
+            setAddingClient(false);
+        }
+    };
 
     const isEdit = _action === 'edit';
     const existingLines = isEdit && sale?.article_lines
@@ -149,12 +188,67 @@ export default function SaleForm({ _action, clients = [], articles = [], kinds =
                     </div>
                     <div className="space-y-2">
                         <Label>Client</Label>
-                        <Select value={data.client_id} onValueChange={v => setData('client_id', v)}>
-                            <SelectTrigger className="bg-background/50"><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
-                            <SelectContent>
-                                {clients.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                            <Select value={data.client_id} onValueChange={v => setData('client_id', v)}>
+                                <SelectTrigger className="bg-background/50 flex-1"><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
+                                <SelectContent>
+                                    {clients.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                                    {clients.length === 0 && (
+                                        <div className="px-3 py-2 text-xs text-muted-foreground italic">Aucun client</div>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-10 w-10 flex-shrink-0 border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-500"
+                                title="Ajouter un client"
+                                onClick={() => setShowAddClient(true)}
+                            >
+                                <UserPlus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        {showAddClient && (
+                            <div className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Nouveau client</p>
+                                    <button type="button" onClick={() => { setShowAddClient(false); setAddClientError(''); }} className="text-muted-foreground hover:text-foreground">
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <Label className="text-xs">Nom *</Label>
+                                        <Input
+                                            value={newClientName}
+                                            onChange={e => setNewClientName(e.target.value)}
+                                            placeholder="Nom du client..."
+                                            className="h-8 text-sm mt-1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Téléphone</Label>
+                                        <Input
+                                            value={newClientPhone}
+                                            onChange={e => setNewClientPhone(e.target.value)}
+                                            placeholder="+243..."
+                                            className="h-8 text-sm mt-1"
+                                        />
+                                    </div>
+                                </div>
+                                {addClientError && <p className="text-xs text-red-500">{addClientError}</p>}
+                                <div className="flex justify-end gap-2">
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => { setShowAddClient(false); setAddClientError(''); }}>
+                                        Annuler
+                                    </Button>
+                                    <Button type="button" size="sm" onClick={handleAddClient} disabled={addingClient} className="bg-amber-500 hover:bg-amber-600 text-white">
+                                        <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                                        {addingClient ? 'Création...' : 'Créer & sélectionner'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label>Observation</Label>

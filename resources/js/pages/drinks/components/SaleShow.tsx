@@ -16,7 +16,7 @@ export default function SaleShow({ sale }: { sale: any }) {
             return;
         }
 
-        router.post(route(actionRoute, [team.slug, sale.id]));
+        router.post(route(actionRoute, { current_team: team.slug, id: sale.id }));
     };
 
     const handlePrint = () => {

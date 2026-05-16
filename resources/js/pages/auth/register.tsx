@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Bot, User, CheckCircle2, Sparkles,
   Package, Truck, Boxes, CreditCard, MapPin, Users,
-  Building2, Eye, EyeOff, Coffee, Zap, Globe, Map, Coins
+  Building2, Eye, EyeOff, Coffee, Zap, Globe, Map, Coins,
+  BedDouble, UtensilsCrossed,
 } from 'lucide-react';
-
 
 import AppLogoIcon from '@/components/app-logo-icon';
 import { PageTransition } from '@/components/ui/page-transition';
@@ -54,7 +54,7 @@ const BOISSONS_CONFIG: SectorConfig = {
 
 function ConfigPreview({ config }: { config: SectorConfig }) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -97,14 +97,18 @@ export default function Register() {
     {
       id: '1',
       sender: 'nexa',
-      text: "Bonjour — je suis NEXA ✦. Je vais paramétrer votre espace de distribution sur mesure. Pour commencer, quel est le nom de votre entreprise ?"
+      text: "Bonjour — je suis NEXA ✦. Je vais configurer votre espace de travail sur mesure. Pour commencer, quel est le nom de votre entreprise ?"
     }
   ]);
 
   const [step, setStep] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [companyData, setCompanyData] = useState({
-    name: '', country: '', region: '', city: '', currency: '', phone: '', email: '', password: '',
+    name: '', country: '', region: '', city: '', currency: '',
+    selectedModules: [] as string[],
+    estimatedRooms: '' as string,
+    estimatedTables: '' as string,
+    phone: '', email: '', password: '',
   });
 
   const fieldLabels: Record<string, string> = {
@@ -135,13 +139,22 @@ export default function Register() {
     setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'user', text }]);
   };
 
+  const getCsrfToken = () => {
+    return (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content || '';
+  };
+
   // ─── AI Intent Handling ──────────────────────────────────────────────────
 
   const fetchNexaAI = async (userInput: string, currentStep: number, currentData: typeof companyData, intent = 'standard'): Promise<string | null> => {
     try {
       const res = await fetch('/nexa-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': getCsrfToken(),
+        },
         body: JSON.stringify({
           step: currentStep,
           intent,
@@ -152,7 +165,7 @@ export default function Register() {
       });
       const data = await res.json();
       return data?.reply || null;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('NEXA chat error', err);
       return null;
     }
@@ -178,7 +191,8 @@ export default function Register() {
     const field = guessCorrectionField(value);
 
     if (field) {
-      const stepMap: Record<string, number> = { name: 0, country: 1, region: 2, city: 3, currency: 4, phone: 5, email: 6 };
+      // step 5 = modules, so phone is now step 6, email step 7
+      const stepMap: Record<string, number> = { name: 0, country: 1, region: 2, city: 3, currency: 4, phone: 6, email: 7 };
       setStep(stepMap[field]);
       addNexaMessage(`Entendu. Indiquez la nouvelle valeur pour le ${fieldLabels[field]}.`, 400);
       return;
@@ -189,31 +203,47 @@ export default function Register() {
   };
 
   const handleReviewEdit = (field: string) => {
-    const stepMap: Record<string, number> = { name: 0, country: 1, region: 2, city: 3, currency: 4, phone: 5, email: 6 };
+    const stepMap: Record<string, number> = { name: 0, country: 1, region: 2, city: 3, currency: 4, phone: 6, email: 7 };
     setStep(stepMap[field]);
     addNexaMessage(`Très bien. Quelle est la nouvelle valeur pour le ${fieldLabels[field]} ?`, 400);
   };
 
   // ─── Step Handlers ────────────────────────────────────────────────────────
 
-  const handleStep0 = async (value: string) => { // Name -> ask Country
+  const handleStep0 = async (value: string) => { // Name -> Country
     addUserMessage(value);
     const updated = { ...companyData, name: value };
     setCompanyData(updated);
     setStep(1);
-    
+
     addNexaMessage(
-      <div className="space-y-2">
-        <p className="text-slate-900 font-medium">Félicitations pour le lancement de <span className="text-slate-950 font-bold">{value}</span> ! ✨</p>
-        <p>C'est un plaisir de vous accompagner. Votre espace de travail va être configuré avec les standards optimisés pour la Distribution de Boissons.</p>
-        <ConfigPreview config={BOISSONS_CONFIG} />
-        <p className="pt-2 text-slate-500">Pour continuer la configuration, dans quel pays votre entreprise est-elle située ?</p>
+      <div className="space-y-3">
+        <p className="text-slate-900 font-medium">Bienvenue, <span className="text-slate-950 font-bold">{value}</span> ✦</p>
+        <p className="text-slate-500 text-[13px]">NEXORA ERP s'adapte à votre activité. Nous configurerons vos modules lors de l'étape suivante.</p>
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+            <Coffee className="h-3.5 w-3.5 text-slate-500" />
+            <p className="text-[11px] font-semibold text-slate-800">Distribution</p>
+            <p className="text-[10px] text-slate-400 leading-tight">Stock, ventes, livraisons</p>
+          </div>
+          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+            <BedDouble className="h-3.5 w-3.5 text-slate-500" />
+            <p className="text-[11px] font-semibold text-slate-800">Hôtellerie</p>
+            <p className="text-[10px] text-slate-400 leading-tight">Chambres, réservations</p>
+          </div>
+          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+            <UtensilsCrossed className="h-3.5 w-3.5 text-slate-500" />
+            <p className="text-[11px] font-semibold text-slate-800">Restauration</p>
+            <p className="text-[10px] text-slate-400 leading-tight">Tables, commandes, caisse</p>
+          </div>
+        </div>
+        <p className="text-slate-500 text-[13px] pt-1">Dans quel pays votre entreprise est-elle située ?</p>
       </div>,
       800
     );
   };
 
-  const handleStep1 = async (value: string) => { // Country -> ask Region
+  const handleStep1 = async (value: string) => { // Country -> Region
     addUserMessage(value);
     const updated = { ...companyData, country: value };
     setCompanyData(updated);
@@ -221,7 +251,7 @@ export default function Register() {
     addNexaMessage(`${value}, c'est noté. Dans quelle région ou province se situe votre siège ?`, 600);
   };
 
-  const handleStep2 = async (value: string) => { // Region -> ask City
+  const handleStep2 = async (value: string) => { // Region -> City
     addUserMessage(value);
     const updated = { ...companyData, region: value };
     setCompanyData(updated);
@@ -229,7 +259,7 @@ export default function Register() {
     addNexaMessage(`Parfait. Et dans quelle ville précisément ?`, 600);
   };
 
-  const handleStep3 = async (value: string) => { // City -> ask Currency
+  const handleStep3 = async (value: string) => { // City -> Currency
     addUserMessage(value);
     const updated = { ...companyData, city: value };
     setCompanyData(updated);
@@ -237,21 +267,58 @@ export default function Register() {
     addNexaMessage(`D'accord. Quelle monnaie sera utilisée pour vos opérations ? (ex: XOF, EUR, USD)`, 600);
   };
 
-  const handleStep4 = async (value: string) => { // Currency -> ask Phone
+  const handleStep4 = async (value: string) => { // Currency -> Module selection
     addUserMessage(value);
     const updated = { ...companyData, currency: value.toUpperCase() };
     setCompanyData(updated);
     setStep(5);
-    addNexaMessage(`Devise (${value.toUpperCase()}) configurée. Quel est le numéro de téléphone de l'entreprise ? (Format : +228 90 00 00 00)`, 600);
+    addNexaMessage(
+      <div className="space-y-1">
+        <p>Devise <strong className="text-slate-900">{value.toUpperCase()}</strong> configurée.</p>
+        <p className="text-slate-500">Quels modules souhaitez-vous activer ? La Distribution Boissons est incluse par défaut.</p>
+      </div>,
+      600
+    );
+  };
+
+  const handleStep5 = async (payload: { modules: string[]; estimatedRooms?: string; estimatedTables?: string }) => { // Modules -> Phone
+    const { modules, estimatedRooms, estimatedTables } = payload;
+    const allModules = Array.from(new Set(['drinks', ...modules]));
+    const updated = { ...companyData, selectedModules: allModules, estimatedRooms: estimatedRooms ?? '', estimatedTables: estimatedTables ?? '' };
+    setCompanyData(updated);
+    setStep(6);
+
+    const extra = modules.filter(m => m !== 'drinks');
+    const parts = ['Boissons'];
+    if (extra.includes('hotel')) parts.push('Hôtellerie');
+    if (extra.includes('fnb')) parts.push('Restauration F&B');
+
+    const details: string[] = [];
+    if (estimatedRooms) details.push(`~${estimatedRooms} chambres`);
+    if (estimatedTables) details.push(`~${estimatedTables} tables`);
+
+    addUserMessage(`Modules : ${parts.join(' + ')}${details.length ? ' · ' + details.join(', ') : ''}`);
+    addNexaMessage(
+      <div className="space-y-1">
+        <p>Parfait — <strong className="text-slate-900">{parts.join(', ')}</strong> activé{parts.length > 1 ? 's' : ''}.</p>
+        {(extra.includes('hotel') && extra.includes('fnb')) && (
+          <p className="text-[12px] text-emerald-600 flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" />
+            Mode Hôtel + Restaurant activé — vos commandes restaurant seront liées aux réservations.
+          </p>
+        )}
+        <p className="text-slate-500">Quel est le numéro de téléphone de l'entreprise ? (Format : +228 90 00 00 00)</p>
+      </div>,
+      600
+    );
   };
 
   const validatePhone = (phone: string) => {
-    // Basic regex for phone format validation
     const phoneRegex = /^\+?[0-9\s-]{8,20}$/;
     return phoneRegex.test(phone);
   };
 
-  const handleStep5 = async (value: string) => { // Phone -> ask Email/Pwd
+  const handleStep6 = async (value: string) => { // Phone -> Email/Pwd
     if (!validatePhone(value)) {
       addNexaMessage(`Le format du numéro semble incorrect. Veuillez utiliser un format valide (ex: +228 90 00 00 00).`, 400);
       return;
@@ -259,25 +326,29 @@ export default function Register() {
     addUserMessage(value);
     const updated = { ...companyData, phone: value };
     setCompanyData(updated);
-    setStep(6);
+    setStep(7);
     addNexaMessage(`C'est noté. Pour finaliser, veuillez définir l'email et le mot de passe du compte administrateur.`, 600);
   };
 
-  const handleStep6 = async (value: { email: string; password: string }) => { // Email/Pwd -> ask OTP
+  const handleStep7 = async (value: { email: string; password: string }) => { // Email/Pwd -> OTP
     addUserMessage(value.email + ' · ••••••••');
     const updated = { ...companyData, email: value.email, password: value.password };
     setCompanyData(updated);
     setIsTyping(true);
 
     try {
-      const res = await fetch('/send-otp', {
+      await fetch('/send-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': getCsrfToken(),
+        },
         body: JSON.stringify({ email: value.email }),
       });
-      const data = await res.json();
       setIsTyping(false);
-      setStep(7);
+      setStep(8);
       addNexaMessage(
         <div className="space-y-2">
           <p>Pour sécuriser votre compte, un code a été envoyé à <strong className="font-medium text-slate-900">{value.email}</strong>.</p>
@@ -285,52 +356,75 @@ export default function Register() {
         </div>,
         400
       );
-    } catch (err: any) {
+    } catch {
       setIsTyping(false);
       addNexaMessage(<span>{"Erreur d'envoi du code. Veuillez réessayer."}</span>, 400);
     }
   };
 
-  const handleStep7 = async (value: string) => { // OTP -> Submission Review
+  const handleStep8 = async (value: string) => { // OTP -> Review
     addUserMessage(value);
     setIsTyping(true);
 
     try {
-      const res = await fetch('/verify-otp', {
+      await fetch('/verify-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': getCsrfToken(),
+        },
         body: JSON.stringify({ email: companyData.email, otp: value }),
       });
-      const data = await res.json();
       setIsTyping(false);
-      setStep(8);
-      
-      const modulesPayload = BOISSONS_CONFIG.modules.filter(m => m.priority === 'core').map(m => m.id);
-      
+      setStep(9);
+
+      const activeModules = companyData.selectedModules.length ? companyData.selectedModules : ['drinks'];
+
       addNexaMessage(
         <div className="space-y-4">
           <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Adresse vérifiée avec succès.</p>
-          
+
           <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/80 text-xs text-slate-600 space-y-2">
             <p className="text-slate-400 font-semibold tracking-wide uppercase mb-3">Synthèse du Déploiement</p>
             <p className="flex justify-between"><span>Entreprise:</span> <strong className="text-slate-900">{companyData.name}</strong></p>
             <p className="flex justify-between"><span>Localisation:</span> <strong className="text-slate-900">{companyData.city}, {companyData.region}, {companyData.country}</strong></p>
             <p className="flex justify-between"><span>Devise:</span> <strong className="text-slate-900">{companyData.currency}</strong></p>
             <p className="flex justify-between"><span>Secteur:</span> <strong className="text-slate-900">{BOISSONS_CONFIG.label}</strong></p>
-            <p className="flex justify-between"><span>Modules actifs:</span> <strong className="text-slate-900">{modulesPayload.length}</strong></p>
+            <p className="flex justify-between"><span>Modules actifs:</span> <strong className="text-slate-900">{activeModules.length}</strong></p>
+            {activeModules.includes('hotel') && (
+              <p className="flex justify-between items-center">
+                <span className="flex items-center gap-1"><BedDouble className="h-3 w-3 text-slate-400" /> Hôtellerie:</span>
+                <strong className="text-slate-900">{companyData.estimatedRooms ? companyData.estimatedRooms + ' chambres' : 'Activé'}</strong>
+              </p>
+            )}
+            {activeModules.includes('fnb') && (
+              <p className="flex justify-between items-center">
+                <span className="flex items-center gap-1"><UtensilsCrossed className="h-3 w-3 text-slate-400" /> Restauration:</span>
+                <strong className="text-slate-900">{companyData.estimatedTables ? companyData.estimatedTables + ' tables' : 'Activé'}</strong>
+              </p>
+            )}
+            {activeModules.includes('hotel') && activeModules.includes('fnb') && (
+              <p className="flex items-center gap-1.5 text-emerald-600 pt-1">
+                <Sparkles className="h-3 w-3" />
+                <span>Mode liaison Hôtel + Restaurant activé</span>
+              </p>
+            )}
           </div>
-          
+
           <p className="text-slate-500">L'environnement est prêt. Vous pouvez valider la création de l'espace.</p>
         </div>,
         600
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsTyping(false);
-      addNexaMessage(`Code invalide — ${err.response?.data?.errors?.otp?.[0] || "Veuillez vérifier et réessayer."}`, 400);
+      const msg = err instanceof Error ? err.message : 'Veuillez vérifier et réessayer.';
+      addNexaMessage(`Code invalide — ${msg}`, 400);
     }
   };
 
-  const handleInputSubmit = async (value: string | any) => {
+  const handleInputSubmit = async (value: string | Record<string, string> | string[] | { modules: string[]; estimatedRooms?: string; estimatedTables?: string }) => {
     if (typeof value === 'string' && isCorrectionRequest(value)) {
       await handleCorrectionRequest(value);
       return;
@@ -339,13 +433,17 @@ export default function Register() {
     const handlers: Record<number, (v: any) => Promise<void>> = {
       0: handleStep0, 1: handleStep1, 2: handleStep2,
       3: handleStep3, 4: handleStep4, 5: handleStep5,
-      6: handleStep6, 7: handleStep7,
+      6: handleStep6, 7: handleStep7, 8: handleStep8,
     };
     await handlers[step]?.(value);
   };
 
   const submitRegistration = () => {
     setIsTyping(true);
+    const modules = Array.from(new Set(['drinks', ...companyData.selectedModules]));
+    const hasHotel = modules.includes('hotel');
+    const hasFnB = modules.includes('fnb');
+
     const payload = {
       name: 'Admin ' + companyData.name,
       company_name: companyData.name,
@@ -359,13 +457,15 @@ export default function Register() {
       password: companyData.password,
       password_confirmation: companyData.password,
       warehouses: '1',
-      modules: BOISSONS_CONFIG.modules.map(m => m.id),
+      modules,
+      estimated_rooms: companyData.estimatedRooms || null,
+      estimated_tables: companyData.estimatedTables || null,
       default_categories: BOISSONS_CONFIG.defaultCategories,
       roles: BOISSONS_CONFIG.roles.map(r => r.role),
       plan: 'pro',
-      sector_config: 'boissons',
+      sector_config: hasHotel && hasFnB ? 'hotel_fnb' : hasHotel ? 'hotel' : hasFnB ? 'fnb' : 'boissons',
     };
-    
+
     router.post('/register', payload, {
       onError: (errors) => {
         setIsTyping(false);
@@ -373,7 +473,7 @@ export default function Register() {
         addNexaMessage(
           <div className="text-red-500 bg-red-50/50 p-3 rounded-lg border border-red-100">
             <p className="font-bold flex items-center gap-2">
-              <Bot className="h-4 w-4" /> 
+              <Bot className="h-4 w-4" />
               Un problème est survenu
             </p>
             <p className="mt-1 text-xs opacity-90">{firstError as string}</p>
@@ -383,14 +483,35 @@ export default function Register() {
       },
       onSuccess: () => {
         setIsTyping(false);
-        setStep(9);
-        fetch('/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => {}).finally(() => {
-          setTimeout(() => router.visit('/login'), 4000);
-        });
+        setStep(10);
+        fetch('/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .catch(() => {})
+          .finally(() => {
+            // Redirection intelligente selon les modules actifs
+            const redirectTo = hasHotel && hasFnB
+              ? '/dashboard/hotel-fnb'
+              : hasHotel
+              ? '/hotel/dashboard'
+              : hasFnB
+              ? '/fnb/dashboard'
+              : '/dashboard';
+            setTimeout(() => router.visit(redirectTo), 4000);
+          });
         addNexaMessage(
           <div className="space-y-2">
             <p className="text-slate-900 font-medium">✨ Initialisation terminée</p>
-            <p className="text-slate-500">Votre plateforme NEXORA est configurée avec succès. Vous allez être redirigé...</p>
+            <p className="text-slate-500">Votre plateforme NEXORA est configurée avec succès.</p>
+            {(hasHotel || hasFnB) && (
+              <p className="text-[12px] text-emerald-600 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" />
+                {hasHotel && hasFnB
+                  ? 'Espace Hôtel + Restaurant prêt — mode liaison activé.'
+                  : hasHotel
+                  ? 'Module Hôtellerie activé.'
+                  : 'Module Restauration F&B activé.'}
+              </p>
+            )}
+            <p className="text-slate-400 text-[12px]">Redirection en cours...</p>
           </div>,
           200
         );
@@ -401,32 +522,39 @@ export default function Register() {
   // ─── Input Renderer ────────────────────────────────────────────────────────
 
   const renderInputArea = () => {
-    if (step <= 5) {
+    if (step <= 4) {
       const placeholders = [
         "Nom de la société...",
         "Pays...",
         "Région...",
         "Ville...",
         "Devise (ex: XOF, EUR, USD)...",
-        "Téléphone (ex: +228 90 00 00 00)...",
       ];
       return <SingleInput onSubmit={handleInputSubmit} placeholder={placeholders[step]} />;
     }
 
+    if (step === 5) {
+      return <ModuleSelect onSubmit={(payload) => handleInputSubmit(payload)} />;
+    }
+
     if (step === 6) {
-      return <DoubleInput onSubmit={handleInputSubmit} ph1="Email professionnel" ph2="Mot de passe sécurisé" k1="email" k2="password" type2="password" />;
+      return <SingleInput onSubmit={handleInputSubmit} placeholder="Téléphone (ex: +228 90 00 00 00)..." />;
     }
 
     if (step === 7) {
-      return <OTPInput onSubmit={handleInputSubmit} />;
+      return <DoubleInput onSubmit={handleInputSubmit} ph1="Email professionnel" ph2="Mot de passe sécurisé" k1="email" k2="password" type2="password" />;
     }
 
     if (step === 8) {
+      return <OTPInput onSubmit={handleInputSubmit} />;
+    }
+
+    if (step === 9) {
       return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           <div className="flex flex-wrap gap-2 items-center text-xs text-slate-500 mb-2">
             <span>Ajuster :</span>
-            {['name', 'country', 'region', 'city', 'currency', 'phone', 'email'].map(field => (
+            {(['name', 'country', 'region', 'city', 'currency', 'phone', 'email'] as const).map(field => (
               <button
                 key={field}
                 type="button"
@@ -448,7 +576,7 @@ export default function Register() {
       );
     }
 
-    if (step === 9) {
+    if (step === 10) {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Link href="/login" className="w-full h-12 rounded-xl border border-slate-300 bg-slate-100 text-slate-700 text-sm font-medium flex items-center justify-center hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm">
@@ -461,7 +589,7 @@ export default function Register() {
     return null;
   };
 
-  const totalSteps = 9;
+  const totalSteps = 10;
   const progress = Math.min((step / totalSteps) * 100, 100);
 
   const stepLabels = [
@@ -470,6 +598,7 @@ export default function Register() {
     { label: 'Région', icon: <Map className="h-3 w-3" /> },
     { label: 'Ville', icon: <MapPin className="h-3 w-3" /> },
     { label: 'Devise', icon: <Coins className="h-3 w-3" /> },
+    { label: 'Modules', icon: <Boxes className="h-3 w-3" /> },
     { label: 'Contact', icon: <Users className="h-3 w-3" /> },
     { label: 'Administrateur', icon: <User className="h-3 w-3" /> },
     { label: 'Vérification', icon: <CheckCircle2 className="h-3 w-3" /> },
@@ -491,7 +620,7 @@ export default function Register() {
         .nexora-clean ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
 
         .clean-glass {
-          background: rgba(248, 250, 252, 0.85); /* softer off-white glass */
+          background: rgba(248, 250, 252, 0.85);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
           border: 1px solid rgba(0, 0, 0, 0.04);
@@ -499,7 +628,7 @@ export default function Register() {
         }
 
         .clean-input {
-          background: rgba(241, 245, 249, 0.6); /* slate-100 softened */
+          background: rgba(241, 245, 249, 0.6);
           border: 1px solid #cbd5e1;
           color: #0f172a;
           transition: all 0.2s ease;
@@ -546,8 +675,8 @@ export default function Register() {
         <div className="absolute inset-0 z-0 opacity-40 mix-blend-multiply pointer-events-none">
           <ParticlesBackground />
         </div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 30, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -555,8 +684,7 @@ export default function Register() {
         >
           {/* ── Left Sidebar ── */}
           <div className="hidden md:flex w-[260px] shrink-0 flex-col p-8 border-r border-slate-100 bg-white/40 backdrop-blur-md relative overflow-hidden">
-            
-            {/* Ambient gradients (Subtle Light) */}
+
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
               <div className="absolute -top-20 -left-20 w-64 h-64 bg-slate-200/50 blur-[60px] rounded-full mix-blend-multiply" />
             </div>
@@ -581,7 +709,7 @@ export default function Register() {
                   <div key={i} className="step-line relative flex items-start gap-3.5 pb-4">
                     <div className="shrink-0 relative flex items-center justify-center h-5 w-5 mt-0.5">
                       {isDone ? (
-                        <motion.div 
+                        <motion.div
                           initial={{ scale: 0.8 }}
                           animate={{ scale: 1 }}
                           className="h-4 w-4 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-sm"
@@ -589,7 +717,7 @@ export default function Register() {
                           <CheckCircle2 className="h-2.5 w-2.5" />
                         </motion.div>
                       ) : isCurrent ? (
-                        <motion.div 
+                        <motion.div
                           animate={{ scale: [1, 1.1, 1] }}
                           transition={{ repeat: Infinity, duration: 2 }}
                           className="h-4 w-4 rounded-full border-2 border-slate-900 flex items-center justify-center bg-slate-100"
@@ -631,7 +759,7 @@ export default function Register() {
 
           {/* ── Right Chat Interface ── */}
           <div className="flex-1 flex flex-col relative min-w-0 bg-slate-50/60 backdrop-blur-sm">
-            
+
             {/* Header */}
             <div className="h-16 flex items-center justify-between px-8 shrink-0 border-b border-slate-200/60 bg-transparent">
               <div className="flex items-center gap-3">
@@ -659,15 +787,11 @@ export default function Register() {
                     key={m.id}
                     initial={{ opacity: 0, y: 15, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ 
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 20
-                    }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
                     className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`flex gap-3 max-w-[85%] ${m.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                      
+
                       <div className={`shrink-0 h-7 w-7 rounded-full flex items-center justify-center mt-auto border ${
                         m.sender === 'user'
                           ? 'bg-slate-200 border-slate-300 text-slate-600'
@@ -689,9 +813,9 @@ export default function Register() {
                 ))}
 
                 {isTyping && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }} 
-                    animate={{ opacity: 1, y: 0 }} 
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="flex justify-start"
                   >
@@ -699,16 +823,16 @@ export default function Register() {
                       <div className="h-7 w-7 rounded-full flex items-center justify-center bg-slate-100 border border-slate-300 shadow-sm mt-auto">
                         <Bot className="h-3.5 w-3.5 text-slate-500" />
                       </div>
-                      <motion.div 
+                      <motion.div
                         layout
                         className="px-5 py-4 rounded-2xl rounded-bl-sm bg-slate-100 border border-slate-300/80 shadow-sm flex items-center gap-1.5"
                       >
                         {[0, 150, 300].map((delay, i) => (
-                          <motion.span 
-                            key={i} 
+                          <motion.span
+                            key={i}
                             animate={{ y: [0, -4, 0] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: delay/1000 }}
-                            className="w-1.5 h-1.5 rounded-full bg-slate-400" 
+                            transition={{ repeat: Infinity, duration: 0.6, delay: delay / 1000 }}
+                            className="w-1.5 h-1.5 rounded-full bg-slate-400"
                           />
                         ))}
                       </motion.div>
@@ -761,7 +885,7 @@ function SingleInput({ onSubmit, placeholder }: { onSubmit: (v: string) => void;
 }
 
 function DoubleInput({ onSubmit, ph1, ph2, k1, k2, type2 = 'text' }: {
-  onSubmit: (v: any) => void; ph1: string; ph2: string; k1: string; k2: string; type2?: string
+  onSubmit: (v: Record<string, string>) => void; ph1: string; ph2: string; k1: string; k2: string; type2?: string
 }) {
   const [v1, setV1] = useState('');
   const [v2, setV2] = useState('');
@@ -825,4 +949,193 @@ function OTPInput({ onSubmit }: { onSubmit: (v: string) => void }) {
   );
 }
 
-Register.layout = (page: any) => <>{page}</>;
+// ─── Module Select ────────────────────────────────────────────────────────────
+
+function ModuleSelect({ onSubmit }: { onSubmit: (payload: { modules: string[]; estimatedRooms?: string; estimatedTables?: string }) => void }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [estimatedRooms, setEstimatedRooms] = useState('');
+  const [estimatedTables, setEstimatedTables] = useState('');
+
+  const hasHotel = selected.includes('hotel');
+  const hasFnB = selected.includes('fnb');
+
+  const toggle = (key: string) => {
+    if (key === 'hotel+fnb') {
+      const hasBoth = selected.includes('hotel') && selected.includes('fnb');
+      if (hasBoth) {
+        setSelected(s => s.filter(m => m !== 'hotel' && m !== 'fnb'));
+      } else {
+        setSelected(s => [...s.filter(m => m !== 'hotel' && m !== 'fnb'), 'hotel', 'fnb']);
+      }
+    } else {
+      setSelected(s => s.includes(key) ? s.filter(m => m !== key) : [...s, key]);
+    }
+  };
+
+  const isSelected = (key: string) => {
+    if (key === 'hotel+fnb') return selected.includes('hotel') && selected.includes('fnb');
+    return selected.includes(key);
+  };
+
+  const cards = [
+    {
+      key: 'hotel',
+      label: 'Hôtellerie',
+      desc: 'Chambres, réservations, check-in/out',
+      icon: <BedDouble className="h-4 w-4" />,
+    },
+    {
+      key: 'fnb',
+      label: 'Restauration / F&B',
+      desc: 'Tables, commandes, cuisine, caisse',
+      icon: <UtensilsCrossed className="h-4 w-4" />,
+    },
+    {
+      key: 'hotel+fnb',
+      label: 'Hôtel + Restaurant',
+      desc: 'Les deux modules liés',
+      icon: <Sparkles className="h-4 w-4" />,
+    },
+  ];
+
+  const roomOptions = ['Moins de 10', '10 à 50', 'Plus de 50'];
+  const tableOptions = ['Moins de 10', '10 à 30', 'Plus de 30'];
+
+  return (
+    <div className="space-y-2.5">
+      {/* Drinks — always active */}
+      <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200">
+        <div className="h-7 w-7 rounded-lg bg-slate-700 text-white flex items-center justify-center shrink-0">
+          <Coffee className="h-3.5 w-3.5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-slate-700">Distribution Boissons</p>
+          <p className="text-[10px] text-slate-400">Toujours actif</p>
+        </div>
+        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+      </div>
+
+      {/* Optional modules */}
+      <div className="grid grid-cols-3 gap-2">
+        {cards.map(card => (
+          <button
+            key={card.key}
+            type="button"
+            onClick={() => toggle(card.key)}
+            className={`flex flex-col items-start gap-1.5 p-2.5 rounded-xl border text-left transition-all duration-200 ${
+              isSelected(card.key)
+                ? 'border-slate-700 bg-slate-800 shadow-sm'
+                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <span className={isSelected(card.key) ? 'text-white' : 'text-slate-400'}>
+              {card.icon}
+            </span>
+            <p className={`text-[11px] font-semibold leading-tight ${isSelected(card.key) ? 'text-white' : 'text-slate-800'}`}>
+              {card.label}
+            </p>
+            <p className={`text-[10px] leading-tight ${isSelected(card.key) ? 'text-slate-300' : 'text-slate-400'}`}>
+              {card.desc}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Champs conditionnels Hotel + F&B */}
+      <AnimatePresence>
+        {hasHotel && (
+          <motion.div
+            key="hotel-rooms"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <BedDouble className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <p className="text-[11px] text-slate-600 shrink-0">Chambres estimées :</p>
+              <div className="flex gap-1.5 flex-wrap">
+                {roomOptions.map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setEstimatedRooms(estimatedRooms === opt ? '' : opt)}
+                    className={`text-[10px] px-2 py-1 rounded-lg border transition-all duration-150 font-medium ${
+                      estimatedRooms === opt
+                        ? 'bg-slate-800 text-white border-slate-700'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {hasFnB && (
+          <motion.div
+            key="fnb-tables"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <UtensilsCrossed className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <p className="text-[11px] text-slate-600 shrink-0">Tables estimées :</p>
+              <div className="flex gap-1.5 flex-wrap">
+                {tableOptions.map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setEstimatedTables(estimatedTables === opt ? '' : opt)}
+                    className={`text-[10px] px-2 py-1 rounded-lg border transition-all duration-150 font-medium ${
+                      estimatedTables === opt
+                        ? 'bg-slate-800 text-white border-slate-700'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {hasHotel && hasFnB && (
+          <motion.div
+            key="linked-mode-badge"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <p className="text-[11px] text-emerald-700 leading-relaxed">
+                <strong>Mode liaison activé</strong> — vos commandes restaurant seront rattachables aux réservations hôtel.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <button
+        type="button"
+        onClick={() => onSubmit({ modules: selected, estimatedRooms: estimatedRooms || undefined, estimatedTables: estimatedTables || undefined })}
+        className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-medium bg-slate-800 text-white hover:bg-slate-700 transition-colors shadow-sm"
+      >
+        <ArrowRight className="h-4 w-4" />
+        Continuer
+      </button>
+    </div>
+  );
+}
+
+Register.layout = (page: React.ReactNode) => <>{page}</>;

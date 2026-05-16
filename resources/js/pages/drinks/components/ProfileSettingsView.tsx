@@ -77,7 +77,7 @@ return;
         formData.append('name', currentUser.name);
         formData.append('email', currentUser.email);
         formData.append('avatar', avatarFile);
-        router.post(route('profile.update'), formData, {
+        router.post('/settings/profile', formData, {
             forceFormData: true,
             onSuccess: () => {
  setAvatarPreview(null); setAvatarFile(null); 
@@ -353,7 +353,7 @@ formData.append('logo', logoFile);
                             <Pencil className="h-5 w-5 text-white" />
                         </button>
                     </div>
-                    <input ref={logoInputRef} type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                    <input ref={logoInputRef} type="file" className="hidden" accept="image/jpeg,image/jpg,image/png" onChange={handleLogoChange} />
                 </div>
 
                 {/* Info Section */}

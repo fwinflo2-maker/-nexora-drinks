@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\AgentConversation;
 use App\Models\DashboardAgent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
-class DashboardAgentController
+class DashboardAgentController extends Controller
 {
     /**
      * Liste les agents disponibles pour le tenant
@@ -29,6 +32,9 @@ class DashboardAgentController
      */
     public function conversations(Request $request, DashboardAgent $agent): JsonResponse
     {
+        $team = $request->user()->currentTeam;
+        abort_if($agent->team_id !== $team?->id, 403);
+
         $conversations = AgentConversation::where('agent_id', $agent->id)
             ->where('user_id', $request->user()->id)
             ->with('messages')
@@ -49,6 +55,9 @@ class DashboardAgentController
      */
     public function createConversation(Request $request, DashboardAgent $agent): JsonResponse
     {
+        $team = $request->user()->currentTeam;
+        abort_if($agent->team_id !== $team?->id, 403);
+
         $request->validate([
             'title' => 'nullable|string|max:255',
             'context' => 'nullable|array',
@@ -73,6 +82,8 @@ class DashboardAgentController
      */
     public function sendMessage(Request $request, AgentConversation $conversation): JsonResponse
     {
+        abort_if($conversation->user_id !== $request->user()->id, 403);
+
         $request->validate([
             'content' => 'required|string|max:5000',
         ]);
@@ -110,17 +121,15 @@ class DashboardAgentController
 
     /**
      * Appelle l'API IA avec le prompt du dashboard agent
-     * Implémentation avec OpenAI/Claude
+     * Utilise OpenAI (gpt-4o-mini) ou Anthropic (claude-3-haiku) selon les clés disponibles
      */
     private function callAIAgent(DashboardAgent $agent, AgentConversation $conversation, string $userMessage): array
     {
-        // Mock implementation - remplacer par vraie API IA
         $systemPrompt = $agent->system_prompt;
 
         // Construire l'historique de contexte
-        $recentMessages = $conversation->messages()
-            ->where('created_at', '>=', now()->subHours(1))
-            ->limit(10)
+        $messages = $conversation->messages()
+            ->limit(20)
             ->get()
             ->map(fn ($msg) => [
                 'role' => $msg->sender === 'user' ? 'user' : 'assistant',
@@ -128,14 +137,121 @@ class DashboardAgentController
             ])
             ->toArray();
 
-        // TODO: Implémenter appel réel OpenAI/Claude
-        // Pour maintenant, retourner réponse mock intelligente
+        // Ajouter le message courant
+        $messages[] = [
+            'role' => 'user',
+            'content' => $userMessage,
+        ];
 
+        // Essayer OpenAI d'abord
+        if (config('services.openai.api_key')) {
+            return $this->callOpenAI($systemPrompt, $messages);
+        }
+
+        // Sinon essayer Anthropic
+        if (config('services.anthropic.api_key')) {
+            return $this->callAnthropic($systemPrompt, $messages);
+        }
+
+        // Mode fallback mock si aucune clé n'est disponible
         return [
             'content' => $this->generateMockResponse($agent, $userMessage),
-            'model' => 'gpt-4',
+            'model' => 'mock',
             'tokens' => 150,
         ];
+    }
+
+    /**
+     * Appelle l'API OpenAI (gpt-4o-mini)
+     */
+    private function callOpenAI(string $systemPrompt, array $messages): array
+    {
+        try {
+            $response = Http::withToken(config('services.openai.api_key'))
+                ->withHeader('Content-Type', 'application/json')
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => 'gpt-4o-mini',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $systemPrompt,
+                        ],
+                        ...$messages,
+                    ],
+                    'temperature' => 0.7,
+                    'max_tokens' => 2000,
+                ]);
+
+            if ($response->failed()) {
+                Log::error('OpenAI API error: '.$response->body());
+
+                return [
+                    'content' => 'Désolé, une erreur est survenue lors de la communication avec OpenAI. Veuillez réessayer.',
+                    'model' => 'gpt-4o-mini',
+                    'tokens' => 0,
+                ];
+            }
+
+            $data = $response->json();
+
+            return [
+                'content' => $data['choices'][0]['message']['content'] ?? 'Pas de réponse',
+                'model' => 'gpt-4o-mini',
+                'tokens' => $data['usage']['total_tokens'] ?? 0,
+            ];
+        } catch (\Exception $e) {
+            Log::error('OpenAI API exception: '.$e->getMessage());
+
+            return [
+                'content' => 'Désolé, une erreur est survenue lors de la communication avec OpenAI. Veuillez réessayer.',
+                'model' => 'gpt-4o-mini',
+                'tokens' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Appelle l'API Anthropic (claude-3-haiku)
+     */
+    private function callAnthropic(string $systemPrompt, array $messages): array
+    {
+        try {
+            $response = Http::withToken(config('services.anthropic.api_key'))
+                ->withHeader('x-api-version', '2023-06-01')
+                ->withHeader('Content-Type', 'application/json')
+                ->post('https://api.anthropic.com/v1/messages', [
+                    'model' => 'claude-3-5-haiku-20241022',
+                    'max_tokens' => 2000,
+                    'system' => $systemPrompt,
+                    'messages' => $messages,
+                ]);
+
+            if ($response->failed()) {
+                Log::error('Anthropic API error: '.$response->body());
+
+                return [
+                    'content' => 'Désolé, une erreur est survenue lors de la communication avec Anthropic. Veuillez réessayer.',
+                    'model' => 'claude-3-haiku',
+                    'tokens' => 0,
+                ];
+            }
+
+            $data = $response->json();
+
+            return [
+                'content' => $data['content'][0]['text'] ?? 'Pas de réponse',
+                'model' => 'claude-3-haiku',
+                'tokens' => ($data['usage']['output_tokens'] ?? 0) + ($data['usage']['input_tokens'] ?? 0),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Anthropic API exception: '.$e->getMessage());
+
+            return [
+                'content' => 'Désolé, une erreur est survenue lors de la communication avec Anthropic. Veuillez réessayer.',
+                'model' => 'claude-3-haiku',
+                'tokens' => 0,
+            ];
+        }
     }
 
     /**

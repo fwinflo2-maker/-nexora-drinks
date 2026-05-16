@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\CustomProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class CustomProfileController
+class CustomProfileController extends Controller
 {
     /**
      * Liste tous les profils du tenant

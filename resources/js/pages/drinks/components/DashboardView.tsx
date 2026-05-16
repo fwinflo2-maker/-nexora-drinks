@@ -36,6 +36,7 @@ type Stats = {
     low_stock_count?: number;
     inventories_draft?: number;
     losses_month?: number;
+    ruptures_count?: number;
     // Caissier / Admin / Gérant
     payments_total?: number;
     cash_inputs_total?: number;
@@ -47,6 +48,10 @@ type Stats = {
     // Chart data
     chart_data: Array<{ name: string; total: number }>;
     expense_data: Array<{ name: string; value: number }>;
+    // Stock lists
+    low_stock_articles?: any[];
+    rupture_articles?: any[];
+    recent_sales?: any[];
 };
 
 
@@ -154,7 +159,7 @@ function QuickLink({ href, label, icon }: QuickLinkProps) {
 
 // ── Operational Widgets ──────────────────────────────────────────────────────
 
-function ActivityFeed({ sales = [] }: { sales: any[] }) {
+function ActivityFeed({ sales = [], slug }: { sales: any[]; slug: string }) {
     return (
         <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 overflow-hidden relative group h-full">
              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
@@ -204,8 +209,8 @@ function ActivityFeed({ sales = [] }: { sales: any[] }) {
                 )}
             </div>
             
-            <Link 
-                href={sales.length > 0 ? route('drinks.sales.index', { current_team: sales[0].team_id }) : '#'} 
+            <Link
+                href={route('drinks.sales.index', { current_team: slug })}
                 className="mt-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors group/link"
             >
                 Voir tout l'historique
@@ -215,7 +220,7 @@ function ActivityFeed({ sales = [] }: { sales: any[] }) {
     );
 }
 
-function StockAlertWidget({ articles = [] }: { articles: any[] }) {
+function StockAlertWidget({ articles = [], slug }: { articles: any[]; slug: string }) {
     return (
         <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl hover:shadow-rose-200/20 transition-all duration-500 overflow-hidden relative group h-full">
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl -ml-32 -mb-32" />
@@ -262,8 +267,8 @@ function StockAlertWidget({ articles = [] }: { articles: any[] }) {
                 )}
             </div>
 
-            <Link 
-                href={articles.length > 0 ? route('drinks.articles.index', { current_team: articles[0].team_id }) : '#'} 
+            <Link
+                href={route('drinks.articles.index', { current_team: slug })}
                 className="mt-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-colors group/link"
             >
                 Gérer le catalogue
@@ -400,8 +405,8 @@ export default function DrinksDashboard({ stats, role }: Props) {
                         {/* ── Real-time Activity & Stock Alerts (Admin/Gerant) ────────── */}
                         {(roleKey === 'admin' || roleKey === 'gerant') && (
                             <div className="grid gap-8 lg:grid-cols-2 pt-4">
-                                <ActivityFeed sales={stats.recent_sales} />
-                                <StockAlertWidget articles={stats.low_stock_articles} />
+                                <ActivityFeed sales={stats.recent_sales ?? []} slug={slug} />
+                                <StockAlertWidget articles={stats.rupture_articles ?? []} slug={slug} />
                             </div>
                         )}
 

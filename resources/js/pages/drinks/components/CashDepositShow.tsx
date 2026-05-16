@@ -11,10 +11,10 @@ export default function CashDepositShow({ cashDeposit }: { cashDeposit: any }) {
 
     const handleAction = (actionRoute: string) => {
         if (!confirm('Êtes-vous sûr de vouloir effectuer cette action ?')) {
-return;
-}
+            return;
+        }
 
-        router.post(route(actionRoute, [team.slug, cashDeposit.id]));
+        router.post(route(actionRoute, { current_team: team.slug, id: cashDeposit.id }));
     };
 
     const getStatusBadge = (status: string) => {
@@ -40,7 +40,7 @@ return;
 
                 <div className="flex items-center gap-2 flex-wrap">
                     <Button variant="outline" asChild className="hover:bg-muted">
-                        <a href={route('drinks.cash-deposits.pdf', [team.slug, cashDeposit.id])} target="_blank" rel="noopener noreferrer">
+                        <a href={route('drinks.cash-deposits.pdf', { current_team: team.slug, id: cashDeposit.id })} target="_blank" rel="noopener noreferrer">
                             <Printer className="mr-2 h-4 w-4" /> Imprimer le reçu
                         </a>
                     </Button>
@@ -89,7 +89,7 @@ return;
                     </div>
                     <div className="text-right">
                         <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Montant Total Versé</p>
-                        <p className="text-3xl font-bold text-blue-500">-{formatCurrency(cashDeposit.total_amount)}</p>
+                        <p className="text-3xl font-bold text-blue-500">{formatCurrency(cashDeposit.total_amount)}</p>
                     </div>
                 </div>
 

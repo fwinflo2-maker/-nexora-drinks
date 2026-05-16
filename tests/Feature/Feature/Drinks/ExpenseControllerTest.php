@@ -30,6 +30,7 @@ test('comptable peut créer une charge en brouillon', function () {
             'expense_type_id' => $type->id,
             'amount' => 50000,
             'document_date' => today()->toDateString(),
+            'label' => 'Facture EDF',
         ])
         ->assertRedirect();
 

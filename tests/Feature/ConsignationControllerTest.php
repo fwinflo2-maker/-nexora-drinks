@@ -120,7 +120,7 @@ test('storeMovement enregistre un retour de consigne', function () {
     ]);
 
     $this->actingAs($user)
-        ->post(route('consignations.mouvements.store', ['current_team' => $team->slug, 'client' => $client->id]), [
+        ->post(route('consignations.movements.store', ['current_team' => $team->slug, 'client' => $client->id]), [
             'packaging_type_id' => $packagingType->id,
             'movement_type' => 'in',
             'quantity' => 3,
@@ -155,7 +155,7 @@ test('storeMovement sortie augmente la dette du client', function () {
     ]);
 
     $this->actingAs($user)
-        ->post(route('consignations.mouvements.store', ['current_team' => $team->slug, 'client' => $client->id]), [
+        ->post(route('consignations.movements.store', ['current_team' => $team->slug, 'client' => $client->id]), [
             'packaging_type_id' => $packagingType->id,
             'movement_type' => 'out',
             'quantity' => 4,
@@ -172,6 +172,6 @@ test('storeMovement valide les champs requis', function () {
     $client = Client::factory()->create(['team_id' => $team->id]);
 
     $this->actingAs($user)
-        ->post(route('consignations.mouvements.store', ['current_team' => $team->slug, 'client' => $client->id]), [])
+        ->post(route('consignations.movements.store', ['current_team' => $team->slug, 'client' => $client->id]), [])
         ->assertSessionHasErrors(['packaging_type_id', 'movement_type', 'quantity']);
 });

@@ -25,7 +25,19 @@
       "Bash(curl -si http://localhost:8000/sanctum/csrf-cookie)",
       "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/Drinks/PricingTierController.php)",
       "Bash(cat resources/js/routes/security/index.ts)",
-      "Bash(cat resources/js/routes/profile/index.ts)"
+      "Bash(cat resources/js/routes/profile/index.ts)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Xln0\\\\Documents\\\\Projects\\\\nexora\\\\routes\" -Name *.php)",
+      "PowerShell(Get-Content \"$env:TEMP\\\\ui-ux_pro_skill\\\\skill.json\")",
+      "PowerShell(Get-ChildItem \"$env:TEMP\\\\ui-ux_pro_skill\\\\.claude\")",
+      "Bash(findstr \"otp\")",
+      "Bash(php -l app/Models/Team.php)",
+      "Bash(php --version)",
+      "Bash(php -r ' *)",
+      "Bash(grep -rn 'DB::statement\\\\|DB::unprepared\\\\|DB::select.*$request\\\\|DB::insert.*$request\\\\|whereRaw.*$request\\\\|orderByRaw.*$request' app/)",
+      "Bash(grep -rn 'dev_otp\\\\|$otp\\\\b' app/)",
+      "Read(//c/Users/Xln0/AppData/Local/Temp/claude/c--Users-Xln0-Documents-Projects-nexora/a356b118-0859-4ca9-8650-090a027c7958/tasks/**)",
+      "Bash(grep -n 'function store\\\\|public function\\\\|Team $current_team\\\\|use ' app/Http/Controllers/Drinks/MembresController.php)",
+      "Bash(vendor/bin/pint app/Enums/TeamPermission.php app/Enums/TeamRole.php app/Policies/Drinks/CashDepositPolicy.php --format agent)"
     ]
   }
 }

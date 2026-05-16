@@ -34,6 +34,12 @@ class CashDepositPolicy
             && $user->hasTeamPermission($user->currentTeam, TeamPermission::DrinksCashDepositsUpdate);
     }
 
+    public function delete(User $user, CashDeposit $cashDeposit): bool
+    {
+        return $cashDeposit->team_id === $user->currentTeam?->id
+            && $user->hasTeamPermission($user->currentTeam, TeamPermission::DrinksCashDepositsDelete);
+    }
+
     public function validate(User $user, CashDeposit $cashDeposit): bool
     {
         return $cashDeposit->team_id === $user->currentTeam?->id

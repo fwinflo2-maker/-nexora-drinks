@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FnB\OrderStatus;
+use App\Enums\Hotel\ReservationStatus;
 use App\Enums\WarehouseType;
 use App\Models\Category;
 use App\Models\GodmodeAuditLog;
@@ -120,6 +122,61 @@ class DashboardController extends Controller
     }
 
     /**
+     * Dashboard Hotel + F&B (Mode 3 — liaison chambre/restaurant)
+     */
+    public function hotelFnB(Request $request, Team $current_team)
+    {
+        abort_unless($current_team->hasModule('hotel') && $current_team->hasModule('fnb'), 403);
+
+        $checkedInReservations = $current_team->hotelReservations()
+            ->with(['room', 'guest', 'fnbOrders'])
+            ->where('status', ReservationStatus::CheckedIn->value)
+            ->orderBy('check_in')
+            ->get()
+            ->map(fn ($res) => [
+                'id' => $res->id,
+                'reference' => $res->reference,
+                'room_number' => $res->room?->number,
+                'guest_name' => $res->guest?->name,
+                'nights' => $res->nights,
+                'check_out' => $res->check_out,
+                'total_price' => $res->total_price,
+                'restaurant_total' => $res->fnbOrders->sum('total'),
+                'open_orders' => $res->fnbOrders->where('status', OrderStatus::Open->value)->count(),
+            ]);
+
+        $openOrders = $current_team->fnbOrders()
+            ->with(['table', 'reservation.room'])
+            ->where('status', OrderStatus::Open->value)
+            ->whereNotNull('reservation_id')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get()
+            ->map(fn ($o) => [
+                'id' => $o->id,
+                'reference' => $o->reference,
+                'room_number' => $o->reservation?->room?->number,
+                'total' => $o->total,
+                'order_type' => $o->order_type,
+                'created_at' => $o->created_at?->toDateTimeString(),
+            ]);
+
+        return Inertia::render('dashboard/hotel-fnb', [
+            'checked_in_reservations' => $checkedInReservations,
+            'open_room_orders' => $openOrders,
+            'stats' => [
+                'occupied_rooms' => $checkedInReservations->count(),
+                'open_room_orders' => $openOrders->count(),
+                'restaurant_revenue_today' => $current_team->fnbOrders()
+                    ->whereDate('created_at', today())
+                    ->where('status', 'closed')
+                    ->whereNotNull('reservation_id')
+                    ->sum('total'),
+            ],
+        ]);
+    }
+
+    /**
      * Overview - Dashboard initial (role-agnostic)
      * Redirige systématiquement vers le dashboard Drinks
      */
@@ -167,7 +224,7 @@ class DashboardController extends Controller
     {
         DB::transaction(function () use ($team) {
             $team->update(['is_active' => true]);
-            
+
             // Débloquer tous les membres de l'entreprise
             $team->members()->update(['blocked_at' => null]);
 
@@ -191,7 +248,7 @@ class DashboardController extends Controller
     {
         DB::transaction(function () use ($team) {
             $team->update(['is_active' => false]);
-            
+
             // Suspendre tous les membres de l'entreprise (sauf les super admins)
             $team->members()
                 ->where('nexora_role', '!=', 'super_admin')

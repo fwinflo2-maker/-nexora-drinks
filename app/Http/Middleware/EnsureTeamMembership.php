@@ -20,7 +20,8 @@ class EnsureTeamMembership
     {
         [$user, $team] = [$request->user(), $this->team($request)];
 
-        abort_if(! $user || ! $team || ($user->nexora_role !== 'super_admin' && ! $user->belongsToTeam($team)), 403);
+        abort_if(! $team, 404);
+        abort_if(! $user || ($user->nexora_role !== 'super_admin' && ! $user->belongsToTeam($team)), 403);
 
         if (! $team->is_active && $user->nexora_role !== 'super_admin' && ! session('impersonator_id')) {
             return redirect()->route('pending-approval');

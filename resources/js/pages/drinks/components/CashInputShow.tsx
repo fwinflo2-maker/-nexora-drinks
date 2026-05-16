@@ -14,7 +14,7 @@ export default function CashInputShow({ cashInput }: { cashInput: any }) {
 return;
 }
 
-        router.post(route(actionRoute, [team.slug, cashInput.id]));
+        router.post(route(actionRoute, { current_team: team.slug, id: cashInput.id }));
     };
 
     const getStatusBadge = (status: string) => {

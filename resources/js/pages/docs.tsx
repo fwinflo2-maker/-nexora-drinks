@@ -63,7 +63,7 @@ const sections: Record<string, React.ReactNode> = {
             <CodeBlock lang="txt" code={`NEXORA
 ├── Frontend    → React 18 + Inertia.js (SPA)
 ├── Backend     → Laravel 11 (API + Auth + Métier)
-├── Base de données → SQLite (dev) / PostgreSQL (prod)
+├── Base de données → MySQL
 ├── Cache       → Redis
 └── Offline     → Dexie.js + Service Workers`} />
         </Section>
