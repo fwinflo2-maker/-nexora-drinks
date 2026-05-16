@@ -5,7 +5,7 @@ import {
   ArrowRight, Bot, User, CheckCircle2, Sparkles,
   Package, Truck, Boxes, CreditCard, MapPin, Users,
   Building2, Eye, EyeOff, Coffee, Zap, Globe, Map, Coins,
-  BedDouble, UtensilsCrossed,
+  BedDouble, UtensilsCrossed, CalendarCheck, Layout, ChefHat, DollarSign, ShoppingCart,
 } from 'lucide-react';
 
 import AppLogoIcon from '@/components/app-logo-icon';
@@ -20,6 +20,8 @@ interface Message {
   text: React.ReactNode;
 }
 
+type CompanyType = 'boissons' | 'hotel' | 'fnb' | 'hotel_fnb';
+
 interface SectorConfig {
   label: string;
   icon: React.ReactNode;
@@ -27,8 +29,6 @@ interface SectorConfig {
   roles: { role: string; label: string }[];
   defaultCategories: string[];
 }
-
-// ─── Sector Configuration (Fixed to Boissons) ───────────────────────────────
 
 const BOISSONS_CONFIG: SectorConfig = {
   label: 'Distribution Boissons',
@@ -48,6 +48,63 @@ const BOISSONS_CONFIG: SectorConfig = {
     { role: 'magasinier', label: 'Magasinier' },
   ],
   defaultCategories: ['Bières', 'Sodas', 'Eaux', 'Vins & Spiritueux', 'Jus de fruits'],
+};
+
+const HOTEL_CONFIG: SectorConfig = {
+  label: 'Hôtellerie',
+  icon: <BedDouble className="h-3.5 w-3.5" />,
+  modules: [
+    { id: 'reservations', name: 'Réservations', priority: 'core', description: 'Gestion des arrivées, départs et tarifs chambre', icon: <CalendarCheck className="h-3.5 w-3.5" /> },
+    { id: 'chambres', name: 'Gestion des Chambres', priority: 'core', description: 'Statut des chambres, ménage et maintenance', icon: <Layout className="h-3.5 w-3.5" /> },
+    { id: 'facturation', name: 'Facturation Hôtel', priority: 'recommended', description: 'Notes de séjour, acomptes et reporting de revenu', icon: <CreditCard className="h-3.5 w-3.5" /> },
+    { id: 'clients', name: 'Clients & Groupes', priority: 'recommended', description: 'Fichiers clients, entreprises et contrats séminaires', icon: <Users className="h-3.5 w-3.5" /> },
+  ],
+  roles: [
+    { role: 'admin', label: 'Administrateur' },
+    { role: 'manager_hotel', label: 'Manager Hôtel' },
+    { role: 'receptionniste', label: 'Réceptionniste' },
+    { role: 'housekeeping', label: 'Housekeeping' },
+  ],
+  defaultCategories: ['Chambres', 'Tarifs', 'Services', 'Clients'],
+};
+
+const FNB_CONFIG: SectorConfig = {
+  label: 'Restauration F&B',
+  icon: <UtensilsCrossed className="h-3.5 w-3.5" />,
+  modules: [
+    { id: 'menus', name: 'Menus & Articles', priority: 'core', description: 'Cartes, catégories, prix et variantes', icon: <Package className="h-3.5 w-3.5" /> },
+    { id: 'salle', name: 'Service en Salle', priority: 'core', description: 'Gestion des tables, commandes et tickets', icon: <ShoppingCart className="h-3.5 w-3.5" /> },
+    { id: 'cuisine', name: 'Écran Cuisine', priority: 'recommended', description: 'Flux de préparation en temps réel pour les plats', icon: <ChefHat className="h-3.5 w-3.5" /> },
+    { id: 'caisses', name: 'Caisse & Paiements', priority: 'recommended', description: 'Encaissements, clôtures et notes de frais', icon: <DollarSign className="h-3.5 w-3.5" /> },
+  ],
+  roles: [
+    { role: 'admin', label: 'Administrateur' },
+    { role: 'manager_fnb', label: 'Manager F&B' },
+    { role: 'serveur', label: 'Serveur' },
+    { role: 'caissier_fnb', label: 'Caissier F&B' },
+  ],
+  defaultCategories: ['Plats', 'Boissons', 'Menus', 'Tables'],
+};
+
+const HOTEL_FNB_CONFIG: SectorConfig = {
+  label: 'Hôtel + F&B liés',
+  icon: <Sparkles className="h-3.5 w-3.5" />,
+  modules: [
+    ...HOTEL_CONFIG.modules,
+    ...FNB_CONFIG.modules,
+  ],
+  roles: [
+    ...HOTEL_CONFIG.roles,
+    ...FNB_CONFIG.roles.filter(role => role.role !== 'admin'),
+  ],
+  defaultCategories: [...HOTEL_CONFIG.defaultCategories, ...FNB_CONFIG.defaultCategories],
+};
+
+const SECTOR_CONFIGS: Record<CompanyType, SectorConfig> = {
+  boissons: BOISSONS_CONFIG,
+  hotel: HOTEL_CONFIG,
+  fnb: FNB_CONFIG,
+  hotel_fnb: HOTEL_FNB_CONFIG,
 };
 
 // ─── Config Preview ───────────────────────────────────────────────────────────
@@ -105,6 +162,7 @@ export default function Register() {
   const [isTyping, setIsTyping] = useState(false);
   const [companyData, setCompanyData] = useState({
     name: '', country: '', region: '', city: '', currency: '',
+    companyType: '' as CompanyType | '',
     selectedModules: [] as string[],
     estimatedRooms: '' as string,
     estimatedTables: '' as string,
@@ -160,7 +218,7 @@ export default function Register() {
           intent,
           input: userInput,
           companyData: currentData,
-          sectorKey: 'boissons',
+          sectorKey: currentData.companyType || 'boissons',
         }),
       });
       const data = await res.json();
@@ -267,7 +325,7 @@ export default function Register() {
     addNexaMessage(`D'accord. Quelle monnaie sera utilisée pour vos opérations ? (ex: XOF, EUR, USD)`, 600);
   };
 
-  const handleStep4 = async (value: string) => { // Currency -> Module selection
+  const handleStep4 = async (value: string) => { // Currency -> Company type selection
     addUserMessage(value);
     const updated = { ...companyData, currency: value.toUpperCase() };
     setCompanyData(updated);
@@ -275,36 +333,43 @@ export default function Register() {
     addNexaMessage(
       <div className="space-y-1">
         <p>Devise <strong className="text-slate-900">{value.toUpperCase()}</strong> configurée.</p>
-        <p className="text-slate-500">Quels modules souhaitez-vous activer ? La Distribution Boissons est incluse par défaut.</p>
+        <p className="text-slate-500">Choisissez le type d'entreprise qui correspond à votre activité.</p>
       </div>,
       600
     );
   };
 
-  const handleStep5 = async (payload: { modules: string[]; estimatedRooms?: string; estimatedTables?: string }) => { // Modules -> Phone
-    const { modules, estimatedRooms, estimatedTables } = payload;
+  const handleStep5 = async (payload: { companyType: CompanyType; estimatedRooms?: string; estimatedTables?: string }) => { // Company type -> Phone
+    const { companyType, estimatedRooms, estimatedTables } = payload;
+    const modules = companyType === 'hotel_fnb'
+      ? ['hotel', 'fnb']
+      : companyType === 'hotel'
+      ? ['hotel']
+      : companyType === 'fnb'
+      ? ['fnb']
+      : [];
+
     const allModules = Array.from(new Set(['drinks', ...modules]));
-    const updated = { ...companyData, selectedModules: allModules, estimatedRooms: estimatedRooms ?? '', estimatedTables: estimatedTables ?? '' };
+    const updated = { ...companyData, companyType, selectedModules: allModules, estimatedRooms: estimatedRooms ?? '', estimatedTables: estimatedTables ?? '' };
     setCompanyData(updated);
     setStep(6);
 
-    const extra = modules.filter(m => m !== 'drinks');
     const parts = ['Boissons'];
-    if (extra.includes('hotel')) parts.push('Hôtellerie');
-    if (extra.includes('fnb')) parts.push('Restauration F&B');
+    if (modules.includes('hotel')) parts.push('Hôtellerie');
+    if (modules.includes('fnb')) parts.push('Restauration F&B');
 
     const details: string[] = [];
     if (estimatedRooms) details.push(`~${estimatedRooms} chambres`);
     if (estimatedTables) details.push(`~${estimatedTables} tables`);
 
-    addUserMessage(`Modules : ${parts.join(' + ')}${details.length ? ' · ' + details.join(', ') : ''}`);
+    addUserMessage(`Type: ${SECTOR_CONFIGS[companyType].label}${details.length ? ' · ' + details.join(', ') : ''}`);
     addNexaMessage(
       <div className="space-y-1">
-        <p>Parfait — <strong className="text-slate-900">{parts.join(', ')}</strong> activé{parts.length > 1 ? 's' : ''}.</p>
-        {(extra.includes('hotel') && extra.includes('fnb')) && (
+        <p>Parfait — <strong className="text-slate-900">{parts.join(' + ')}</strong> activé{parts.length > 1 ? 's' : ''}.</p>
+        {companyType === 'hotel_fnb' && (
           <p className="text-[12px] text-emerald-600 flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" />
-            Mode Hôtel + Restaurant activé — vos commandes restaurant seront liées aux réservations.
+            Mode 3 — Hôtel + F&B liés activé : commandes, cuisine et réservations sont synchronisées.
           </p>
         )}
         <p className="text-slate-500">Quel est le numéro de téléphone de l'entreprise ? (Format : +228 90 00 00 00)</p>
@@ -391,7 +456,7 @@ export default function Register() {
             <p className="flex justify-between"><span>Entreprise:</span> <strong className="text-slate-900">{companyData.name}</strong></p>
             <p className="flex justify-between"><span>Localisation:</span> <strong className="text-slate-900">{companyData.city}, {companyData.region}, {companyData.country}</strong></p>
             <p className="flex justify-between"><span>Devise:</span> <strong className="text-slate-900">{companyData.currency}</strong></p>
-            <p className="flex justify-between"><span>Secteur:</span> <strong className="text-slate-900">{BOISSONS_CONFIG.label}</strong></p>
+            <p className="flex justify-between"><span>Secteur:</span> <strong className="text-slate-900">{SECTOR_CONFIGS[companyData.companyType || 'boissons'].label}</strong></p>
             <p className="flex justify-between"><span>Modules actifs:</span> <strong className="text-slate-900">{activeModules.length}</strong></p>
             {activeModules.includes('hotel') && (
               <p className="flex justify-between items-center">
@@ -444,10 +509,13 @@ export default function Register() {
     const hasHotel = modules.includes('hotel');
     const hasFnB = modules.includes('fnb');
 
+    const selectedType = companyData.companyType || (hasHotel && hasFnB ? 'hotel_fnb' : hasHotel ? 'hotel' : hasFnB ? 'fnb' : 'boissons');
+    const selectedConfig = SECTOR_CONFIGS[selectedType];
+
     const payload = {
       name: 'Admin ' + companyData.name,
       company_name: companyData.name,
-      company_type: 'boissons',
+      company_type: selectedType,
       ville: companyData.city,
       region: companyData.region,
       pays: companyData.country,
@@ -460,10 +528,10 @@ export default function Register() {
       modules,
       estimated_rooms: companyData.estimatedRooms || null,
       estimated_tables: companyData.estimatedTables || null,
-      default_categories: BOISSONS_CONFIG.defaultCategories,
-      roles: BOISSONS_CONFIG.roles.map(r => r.role),
+      default_categories: selectedConfig.defaultCategories,
+      roles: selectedConfig.roles.map(r => r.role),
       plan: 'pro',
-      sector_config: hasHotel && hasFnB ? 'hotel_fnb' : hasHotel ? 'hotel' : hasFnB ? 'fnb' : 'boissons',
+      sector_config: selectedType,
     };
 
     router.post('/register', payload, {
