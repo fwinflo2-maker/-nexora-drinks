@@ -34,6 +34,12 @@ class OrderPolicy
             && $user->hasTeamPermission($user->currentTeam, TeamPermission::FnBOrdersEdit);
     }
 
+    public function sendToKitchen(User $user, Order $order): bool
+    {
+        return $order->team_id === $user->currentTeam?->id
+            && $user->hasTeamPermission($user->currentTeam, TeamPermission::FnBOrdersEdit);
+    }
+
     public function close(User $user, Order $order): bool
     {
         return $order->team_id === $user->currentTeam?->id

@@ -77,21 +77,71 @@ class OtpController extends Controller
             'otp' => 'required|string|size:6',
         ]);
 
-        $cachedOtp = Cache::get('otp_'.$request->email);
+        $email = $request->email;
+        $ip = $request->ip();
+        $lockKeyEmail = 'otp_lock_'.$email;
+        $attemptsKeyEmail = 'otp_attempts_'.$email;
+        $lockKeyIp = 'otp_lock_ip_'.$ip;
+
+        // Vérifier verrouillage par email
+        if (Cache::has($lockKeyEmail)) {
+            $ttl = Cache::get($lockKeyEmail.'_ttl', 15);
+            throw ValidationException::withMessages([
+                'otp' => ["Compte temporairement verrouillé. Réessayez dans {$ttl} minutes."],
+            ]);
+        }
+
+        // Vérifier verrouillage par IP
+        if (Cache::has($lockKeyIp)) {
+            throw ValidationException::withMessages([
+                'otp' => ['Trop de tentatives depuis cette adresse IP. Réessayez plus tard.'],
+            ]);
+        }
+
+        $cachedOtp = Cache::get('otp_'.$email);
 
         Log::info('OTP comparaison', [
-            'email' => $request->email,
+            'email' => $email,
             'has_cached' => $cachedOtp !== null,
         ]);
 
         if (! $cachedOtp || ! hash_equals($cachedOtp, (string) $request->otp)) {
+            // Incrémenter compteur de tentatives
+            $attempts = (int) Cache::get($attemptsKeyEmail, 0) + 1;
+            Cache::put($attemptsKeyEmail, $attempts, now()->addMinutes(30));
+
+            if ($attempts >= 3) {
+                // Backoff exponentiel : 15min * 2^(attempts-3)
+                $lockMinutes = min(15 * (2 ** ($attempts - 3)), 240);
+                Cache::put($lockKeyEmail, true, now()->addMinutes($lockMinutes));
+                Cache::put($lockKeyEmail.'_ttl', $lockMinutes, now()->addMinutes($lockMinutes));
+                Cache::put($lockKeyIp, true, now()->addMinutes($lockMinutes));
+                Cache::forget($attemptsKeyEmail);
+
+                Log::warning('OTP: compte verrouillé après échecs répétés', [
+                    'email' => $email,
+                    'ip' => $ip,
+                    'attempts' => $attempts,
+                    'lock_minutes' => $lockMinutes,
+                ]);
+
+                throw ValidationException::withMessages([
+                    'otp' => ["Trop de tentatives incorrectes. Compte verrouillé {$lockMinutes} minutes."],
+                ]);
+            }
+
+            $remaining = 3 - $attempts;
             throw ValidationException::withMessages([
-                'otp' => ['Le code est invalide ou a expiré.'],
+                'otp' => ["Le code est invalide ou a expiré. {$remaining} tentative(s) restante(s)."],
             ]);
         }
 
-        Cache::put('otp_verified_'.$request->email, true, now()->addMinutes(30));
-        Cache::forget('otp_'.$request->email);
+        // Succès : nettoyer tous les verrous et l'OTP
+        Cache::forget('otp_'.$email);
+        Cache::forget($attemptsKeyEmail);
+        Cache::forget($lockKeyEmail);
+        Cache::forget($lockKeyEmail.'_ttl');
+        Cache::put('otp_verified_'.$email, true, now()->addMinutes(30));
 
         return response()->json(['success' => true]);
     }

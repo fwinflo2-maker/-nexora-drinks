@@ -112,6 +112,8 @@ class ReservationController extends Controller
 
     public function checkIn(Team $current_team, Reservation $reservation): RedirectResponse
     {
+        $this->authorize('checkIn', $reservation);
+
         abort_unless(
             $reservation->status === ReservationStatus::Confirmed,
             422,
@@ -136,6 +138,8 @@ class ReservationController extends Controller
 
     public function quickCheckOut(Team $current_team, Reservation $reservation): RedirectResponse
     {
+        $this->authorize('checkOut', $reservation);
+
         abort_unless(
             $reservation->status === ReservationStatus::CheckedIn,
             422,
@@ -169,6 +173,8 @@ class ReservationController extends Controller
 
     public function checkout(Request $request, Team $current_team, Reservation $reservation): RedirectResponse
     {
+        $this->authorize('checkOut', $reservation);
+
         abort_unless(
             $reservation->status === ReservationStatus::CheckedIn,
             422,
@@ -199,6 +205,8 @@ class ReservationController extends Controller
 
     public function cancel(Team $current_team, Reservation $reservation): RedirectResponse
     {
+        $this->authorize('cancel', $reservation);
+
         abort_unless(
             in_array($reservation->status, [ReservationStatus::Pending, ReservationStatus::Confirmed], strict: true),
             422,

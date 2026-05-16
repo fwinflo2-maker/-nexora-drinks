@@ -31,7 +31,12 @@ class DashboardController extends Controller
             return redirect()->route('home');
         }
 
-        return redirect()->route('drinks.dashboard', ['current_team' => $team->slug]);
+        return match ($team->sector) {
+            'hotel_fnb' => redirect()->route('dashboard.hotel-fnb', ['current_team' => $team->slug]),
+            'hotel' => redirect()->route('hotel.dashboard', ['current_team' => $team->slug]),
+            'fnb' => redirect()->route('fnb.dashboard', ['current_team' => $team->slug]),
+            default => redirect()->route('drinks.dashboard', ['current_team' => $team->slug]),
+        };
     }
 
     /**

@@ -27,8 +27,16 @@ class RegisterResponse implements RegisterResponseContract
 
         URL::defaults(['current_team' => $team->slug]);
 
+        $sector = $team->sector ?? '';
+        $redirectPath = match ($sector) {
+            'hotel_fnb' => "/{$team->slug}/dashboard/hotel-fnb",
+            'hotel' => "/{$team->slug}/hotel/dashboard",
+            'fnb' => "/{$team->slug}/fnb/dashboard",
+            default => "/{$team->slug}".Fortify::redirects('register'),
+        };
+
         return $request->wantsJson()
             ? new JsonResponse(['two_factor' => false], 201)
-            : redirect()->intended("/{$team->slug}".Fortify::redirects('register'));
+            : redirect()->intended($redirectPath);
     }
 }

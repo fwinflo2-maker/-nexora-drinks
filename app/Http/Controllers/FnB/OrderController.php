@@ -25,6 +25,13 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    private const VALID_ITEM_TRANSITIONS = [
+        'pending' => ['sent'],
+        'sent' => ['preparing'],
+        'preparing' => ['ready'],
+        'ready' => ['served'],
+    ];
+
     public function __construct(private readonly HotelFnBBridgeService $bridge) {}
 
     public function index(Request $request, Team $current_team): Response
@@ -146,6 +153,8 @@ class OrderController extends Controller
 
     public function sendToKitchen(Team $current_team, Order $order): RedirectResponse
     {
+        $this->authorize('sendToKitchen', $order);
+
         abort_unless($order->status === OrderStatus::Open, 422, 'Commande déjà envoyée.');
         abort_unless($order->items()->exists(), 422, 'Commande vide.');
 
@@ -158,8 +167,17 @@ class OrderController extends Controller
     public function updateItemStatus(UpdateOrderItemStatusRequest $request, Team $current_team, Order $order, OrderItem $item): RedirectResponse
     {
         $data = $request->validated();
+        $newStatus = $data['status'];
+        $currentStatus = $item->status;
 
-        $item->update(['status' => $data['status']]);
+        $validNext = self::VALID_ITEM_TRANSITIONS[$currentStatus] ?? [];
+        abort_unless(
+            in_array($newStatus, $validNext, true),
+            422,
+            "Transition invalide : {$currentStatus} → {$newStatus}."
+        );
+
+        $item->update(['status' => $newStatus]);
 
         if ($data['status'] === 'ready' && $order->items()->where('status', '!=', 'ready')->doesntExist()) {
             $order->update(['status' => OrderStatus::Ready->value]);
@@ -170,6 +188,8 @@ class OrderController extends Controller
 
     public function close(Request $request, Team $current_team, Order $order): RedirectResponse
     {
+        $this->authorize('close', $order);
+
         abort_unless(
             in_array($order->status->value, [OrderStatus::Open->value, OrderStatus::Ready->value, OrderStatus::Sent->value, OrderStatus::Preparing->value], true),
             422,
@@ -222,6 +242,8 @@ class OrderController extends Controller
 
     public function cancel(Team $current_team, Order $order): RedirectResponse
     {
+        $this->authorize('cancel', $order);
+
         abort_unless(
             in_array($order->status->value, [OrderStatus::Open->value, OrderStatus::Sent->value], true),
             422,

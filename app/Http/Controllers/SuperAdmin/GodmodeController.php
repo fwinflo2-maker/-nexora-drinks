@@ -33,6 +33,13 @@ class GodmodeController extends Controller
      */
     public function impersonateTenant(Request $request, Team $team): JsonResponse
     {
+        // Bloquer l'impersonation imbriquée
+        abort_if(
+            $request->hasSession() && $request->session()->has('impersonator_id'),
+            403,
+            'Impersonation imbriquée interdite. Terminez la session active d\'abord.'
+        );
+
         $superAdmin = $request->user();
 
         // Log audit
@@ -89,12 +96,12 @@ class GodmodeController extends Controller
     }
 
     /**
-     * GODMODE: Exécuter une requête SQL directe (ISO ULTRA DANGEREUX)
+     * GODMODE: Exécuter une requête SQL directe (SELECT uniquement).
      */
     public function executeSql(Request $request): JsonResponse
     {
         $request->validate([
-            'query' => 'required|string',
+            'query' => 'required|string|max:10000',
             'confirmation' => 'required|boolean',
         ]);
 
@@ -104,18 +111,47 @@ class GodmodeController extends Controller
             ], 422);
         }
 
-        try {
-            $result = DB::select($request->input('query'));
+        $rawQuery = trim($request->input('query'));
 
+        // Whitelist: uniquement SELECT autorisé
+        if (! str_starts_with(strtoupper($rawQuery), 'SELECT')) {
             $this->logGodmodeSystemAction(
                 $request->user(),
-                'direct_sql_execution',
-                'Requête SQL exécutée',
-                [
-                    'query_preview' => substr($request->input('query'), 0, 100).'...',
-                    'result_count' => count($result),
-                ]
+                'direct_sql_blocked',
+                'Requête SQL refusée (non-SELECT)',
+                ['query_preview' => substr($rawQuery, 0, 100)]
             );
+
+            return response()->json([
+                'message' => 'Seules les requêtes SELECT sont autorisées dans Godmode.',
+            ], 422);
+        }
+
+        // Log AVANT exécution (status PENDING)
+        $logId = GodmodeSystemLog::create([
+            'level' => 'info',
+            'type' => 'direct_sql_execution',
+            'message' => 'Requête SQL en cours (PENDING)',
+            'context' => [
+                'query_preview' => substr($rawQuery, 0, 200),
+                'status' => 'PENDING',
+                'triggered_by' => $request->user()->id,
+            ],
+            'triggered_by' => $request->user()->id,
+        ])->id;
+
+        try {
+            $result = DB::select(DB::raw($rawQuery));
+
+            GodmodeSystemLog::where('id', $logId)->update([
+                'message' => 'Requête SQL exécutée (SUCCESS)',
+                'context' => json_encode([
+                    'query_preview' => substr($rawQuery, 0, 200),
+                    'status' => 'SUCCESS',
+                    'result_count' => count($result),
+                    'triggered_by' => $request->user()->id,
+                ]),
+            ]);
 
             return response()->json([
                 'data' => $result,
@@ -124,12 +160,16 @@ class GodmodeController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            $this->logGodmodeSystemAction(
-                $request->user(),
-                'direct_sql_execution_error',
-                'Erreur exécution SQL: '.$e->getMessage(),
-                ['query' => substr($request->input('query'), 0, 100)]
-            );
+            GodmodeSystemLog::where('id', $logId)->update([
+                'level' => 'error',
+                'message' => 'Requête SQL échouée (FAILED): '.$e->getMessage(),
+                'context' => json_encode([
+                    'query_preview' => substr($rawQuery, 0, 200),
+                    'status' => 'FAILED',
+                    'error' => $e->getMessage(),
+                    'triggered_by' => $request->user()->id,
+                ]),
+            ]);
 
             return response()->json([
                 'message' => 'Erreur: '.$e->getMessage(),

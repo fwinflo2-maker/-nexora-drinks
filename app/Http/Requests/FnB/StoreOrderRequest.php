@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\FnB;
 
+use App\Models\FnB\Order;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', Order::class);
     }
 
     /** @return array<string, array<int, mixed>> */

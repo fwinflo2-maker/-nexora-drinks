@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\LlmScrubberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class NexaChatController extends Controller
 {
+    public function __construct(private readonly LlmScrubberService $scrubber) {}
+
     public function handleChat(Request $request)
     {
         $request->validate([
@@ -101,6 +104,17 @@ PROMPT;
         }
 
         try {
+            // Scrubber PII avant envoi au LLM externe
+            $scrubbed = $this->scrubber->scrubPrompt($userPrompt);
+            $cleanUserPrompt = $scrubbed['clean'];
+
+            if ($scrubbed['had_pii']) {
+                Log::channel('llm_audit')->info('LLM: PII détecté et masqué avant envoi Groq', [
+                    'step' => $step,
+                    'intent' => $intent,
+                ]);
+            }
+
             $verify = filter_var(config('services.groq.verify', true), FILTER_VALIDATE_BOOLEAN);
             $response = Http::withOptions(['verify' => $verify])->timeout(12)->withHeaders([
                 'Authorization' => 'Bearer '.$apiKey,
@@ -108,7 +122,7 @@ PROMPT;
                 'model' => $model,
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $userPrompt],
+                    ['role' => 'user', 'content' => $cleanUserPrompt],
                 ],
                 'temperature' => 0.75,
                 'max_tokens' => 220,

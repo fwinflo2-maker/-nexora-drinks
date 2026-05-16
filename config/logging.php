@@ -52,6 +52,14 @@ return [
 
     'channels' => [
 
+        'llm_audit' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/llm-audit.log'),
+            'level' => 'info',
+            'days' => 90,
+            'replace_placeholders' => true,
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),

@@ -23,7 +23,7 @@ class SettingController extends Controller
     {
         Gate::authorize('viewAny', Setting::class);
 
-        $settings = Setting::all();
+        $settings = Setting::where('team_id', $current_team->id)->get();
 
         $members = $current_team->members()
             ->get()

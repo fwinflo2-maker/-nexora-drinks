@@ -38,7 +38,9 @@ class HotelFnBBridgeService
             throw new InvalidBridgeOperationException('La commande est déjà rattachée à une autre réservation.');
         }
 
-        $order->update(['reservation_id' => $reservation->id]);
+        DB::transaction(function () use ($order, $reservation): void {
+            $order->update(['reservation_id' => $reservation->id]);
+        });
     }
 
     /**
@@ -50,7 +52,9 @@ class HotelFnBBridgeService
             throw new InvalidBridgeOperationException('Impossible de détacher une commande clôturée ou annulée.');
         }
 
-        $order->update(['reservation_id' => null]);
+        DB::transaction(function () use ($order): void {
+            $order->update(['reservation_id' => null]);
+        });
     }
 
     /**
@@ -143,8 +147,10 @@ class HotelFnBBridgeService
      */
     public function releaseRoomAfterCheckout(Reservation $reservation): void
     {
-        $reservation->room()->withoutGlobalScopes()
-            ->where('id', $reservation->room_id)
-            ->update(['status' => RoomStatus::Maintenance->value]);
+        DB::transaction(function () use ($reservation): void {
+            $reservation->room()->withoutGlobalScopes()
+                ->where('id', $reservation->room_id)
+                ->update(['status' => RoomStatus::Maintenance->value]);
+        });
     }
 }

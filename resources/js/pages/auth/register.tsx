@@ -150,11 +150,18 @@ function ConfigPreview({ config }: { config: SectorConfig }) {
 // ─── Main Register Component ──────────────────────────────────────────────────
 
 export default function Register() {
+
+  // Step 0: Select business type (module)
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       sender: 'nexa',
-      text: "Bonjour — je suis NEXA ✦. Je vais configurer votre espace de travail sur mesure. Pour commencer, quel est le nom de votre entreprise ?"
+      text: (
+        <div className="space-y-3">
+          <p className="text-slate-900 font-medium">Bienvenue sur NEXORA ✦</p>
+          <p className="text-slate-500 text-[13px]">Pour commencer, sélectionnez le type d'entreprise qui correspond le mieux à votre activité. Ce choix déterminera les modules et fonctionnalités adaptés à votre secteur.</p>
+        </div>
+      )
     }
   ]);
 
@@ -268,45 +275,41 @@ export default function Register() {
 
   // ─── Step Handlers ────────────────────────────────────────────────────────
 
-  const handleStep0 = async (value: string) => { // Name -> Country
-    addUserMessage(value);
-    const updated = { ...companyData, name: value };
-    setCompanyData(updated);
+  // Step 0: Select business type
+  const handleStep0 = async (companyType: CompanyType) => {
+    const modules = companyType === 'hotel_fnb'
+      ? ['hotel', 'fnb']
+      : companyType === 'hotel'
+      ? ['hotel']
+      : companyType === 'fnb'
+      ? ['fnb']
+      : [];
+    const allModules = Array.from(new Set(['drinks', ...modules]));
+    setCompanyData(prev => ({ ...prev, companyType, selectedModules: allModules }));
+    addUserMessage(SECTOR_CONFIGS[companyType].label);
     setStep(1);
-
     addNexaMessage(
       <div className="space-y-3">
-        <p className="text-slate-900 font-medium">Bienvenue, <span className="text-slate-950 font-bold">{value}</span> ✦</p>
-        <p className="text-slate-500 text-[13px]">NEXORA ERP s'adapte à votre activité. Nous configurerons vos modules lors de l'étape suivante.</p>
-        <div className="grid grid-cols-3 gap-2 pt-1">
-          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
-            <Coffee className="h-3.5 w-3.5 text-slate-500" />
-            <p className="text-[11px] font-semibold text-slate-800">Distribution</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Stock, ventes, livraisons</p>
-          </div>
-          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
-            <BedDouble className="h-3.5 w-3.5 text-slate-500" />
-            <p className="text-[11px] font-semibold text-slate-800">Hôtellerie</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Chambres, réservations</p>
-          </div>
-          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
-            <UtensilsCrossed className="h-3.5 w-3.5 text-slate-500" />
-            <p className="text-[11px] font-semibold text-slate-800">Restauration</p>
-            <p className="text-[10px] text-slate-400 leading-tight">Tables, commandes, caisse</p>
-          </div>
-        </div>
-        <p className="text-slate-500 text-[13px] pt-1">Dans quel pays votre entreprise est-elle située ?</p>
+        <p className="text-slate-900 font-medium">Type sélectionné : <span className="text-slate-950 font-bold">{SECTOR_CONFIGS[companyType].label}</span></p>
+        {companyType === 'hotel_fnb' && (
+          <p className="text-[12px] text-emerald-600 flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" />
+            Mode 3 — Hôtel + F&B liés : gestion synchronisée des chambres, réservations, commandes et cuisine pour une expérience intégrée.
+          </p>
+        )}
+        <p className="text-slate-500 text-[13px]">Quel est le nom de votre entreprise ?</p>
       </div>,
       800
     );
   };
 
-  const handleStep1 = async (value: string) => { // Country -> Region
+  // Step 1: Company name -> Country
+  const handleStep1 = async (value: string) => {
     addUserMessage(value);
-    const updated = { ...companyData, country: value };
+    const updated = { ...companyData, name: value };
     setCompanyData(updated);
     setStep(2);
-    addNexaMessage(`${value}, c'est noté. Dans quelle région ou province se situe votre siège ?`, 600);
+    addNexaMessage(`Dans quel pays votre entreprise est-elle située ?`, 600);
   };
 
   const handleStep2 = async (value: string) => { // Region -> City
@@ -325,58 +328,16 @@ export default function Register() {
     addNexaMessage(`D'accord. Quelle monnaie sera utilisée pour vos opérations ? (ex: XOF, EUR, USD)`, 600);
   };
 
-  const handleStep4 = async (value: string) => { // Currency -> Company type selection
+  const handleStep4 = async (value: string) => { // Currency -> Phone
     addUserMessage(value);
     const updated = { ...companyData, currency: value.toUpperCase() };
     setCompanyData(updated);
     setStep(5);
-    addNexaMessage(
-      <div className="space-y-1">
-        <p>Devise <strong className="text-slate-900">{value.toUpperCase()}</strong> configurée.</p>
-        <p className="text-slate-500">Choisissez le type d'entreprise qui correspond à votre activité.</p>
-      </div>,
-      600
-    );
+    addNexaMessage(`Devise ${value.toUpperCase()} configurée. Quel est le numéro de téléphone de l'entreprise ? (Format : +228 90 00 00 00)`, 600);
   };
 
-  const handleStep5 = async (payload: { companyType: CompanyType; estimatedRooms?: string; estimatedTables?: string }) => { // Company type -> Phone
-    const { companyType, estimatedRooms, estimatedTables } = payload;
-    const modules = companyType === 'hotel_fnb'
-      ? ['hotel', 'fnb']
-      : companyType === 'hotel'
-      ? ['hotel']
-      : companyType === 'fnb'
-      ? ['fnb']
-      : [];
-
-    const allModules = Array.from(new Set(['drinks', ...modules]));
-    const updated = { ...companyData, companyType, selectedModules: allModules, estimatedRooms: estimatedRooms ?? '', estimatedTables: estimatedTables ?? '' };
-    setCompanyData(updated);
-    setStep(6);
-
-    const parts = ['Boissons'];
-    if (modules.includes('hotel')) parts.push('Hôtellerie');
-    if (modules.includes('fnb')) parts.push('Restauration F&B');
-
-    const details: string[] = [];
-    if (estimatedRooms) details.push(`~${estimatedRooms} chambres`);
-    if (estimatedTables) details.push(`~${estimatedTables} tables`);
-
-    addUserMessage(`Type: ${SECTOR_CONFIGS[companyType].label}${details.length ? ' · ' + details.join(', ') : ''}`);
-    addNexaMessage(
-      <div className="space-y-1">
-        <p>Parfait — <strong className="text-slate-900">{parts.join(' + ')}</strong> activé{parts.length > 1 ? 's' : ''}.</p>
-        {companyType === 'hotel_fnb' && (
-          <p className="text-[12px] text-emerald-600 flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3" />
-            Mode 3 — Hôtel + F&B liés activé : commandes, cuisine et réservations sont synchronisées.
-          </p>
-        )}
-        <p className="text-slate-500">Quel est le numéro de téléphone de l'entreprise ? (Format : +228 90 00 00 00)</p>
-      </div>,
-      600
-    );
-  };
+  // Step 5 is now phone input
+  // (removed module selection here)
 
   const validatePhone = (phone: string) => {
     const phoneRegex = /^\+?[0-9\s-]{8,20}$/;
@@ -391,7 +352,7 @@ export default function Register() {
     addUserMessage(value);
     const updated = { ...companyData, phone: value };
     setCompanyData(updated);
-    setStep(7);
+    setStep(6);
     addNexaMessage(`C'est noté. Pour finaliser, veuillez définir l'email et le mot de passe du compte administrateur.`, 600);
   };
 
@@ -402,7 +363,7 @@ export default function Register() {
     setIsTyping(true);
 
     try {
-      await fetch('/send-otp', {
+      const response = await fetch('/send-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -412,8 +373,14 @@ export default function Register() {
         },
         body: JSON.stringify({ email: value.email }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Erreur lors de l'envoi du code");
+      }
+
       setIsTyping(false);
-      setStep(8);
+      setStep(7);
       addNexaMessage(
         <div className="space-y-2">
           <p>Pour sécuriser votre compte, un code a été envoyé à <strong className="font-medium text-slate-900">{value.email}</strong>.</p>
@@ -421,9 +388,10 @@ export default function Register() {
         </div>,
         400
       );
-    } catch {
+    } catch (err: unknown) {
       setIsTyping(false);
-      addNexaMessage(<span>{"Erreur d'envoi du code. Veuillez réessayer."}</span>, 400);
+      const msg = err instanceof Error ? err.message : "Erreur d'envoi du code. Veuillez réessayer.";
+      addNexaMessage(<span>{msg}</span>, 400);
     }
   };
 
@@ -432,7 +400,7 @@ export default function Register() {
     setIsTyping(true);
 
     try {
-      await fetch('/verify-otp', {
+      const response = await fetch('/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -442,8 +410,14 @@ export default function Register() {
         },
         body: JSON.stringify({ email: companyData.email, otp: value }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Code invalide ou expiré');
+      }
+
       setIsTyping(false);
-      setStep(9);
+      setStep(8);
 
       const activeModules = companyData.selectedModules.length ? companyData.selectedModules : ['drinks'];
 
@@ -489,16 +463,15 @@ export default function Register() {
     }
   };
 
-  const handleInputSubmit = async (value: string | Record<string, string> | string[] | { modules: string[]; estimatedRooms?: string; estimatedTables?: string }) => {
+  const handleInputSubmit = async (value: any) => {
     if (typeof value === 'string' && isCorrectionRequest(value)) {
       await handleCorrectionRequest(value);
       return;
     }
-
     const handlers: Record<number, (v: any) => Promise<void>> = {
       0: handleStep0, 1: handleStep1, 2: handleStep2,
-      3: handleStep3, 4: handleStep4, 5: handleStep5,
-      6: handleStep6, 7: handleStep7, 8: handleStep8,
+      3: handleStep3, 4: handleStep4, 5: handleStep6,
+      6: handleStep7, 7: handleStep8, 8: undefined,
     };
     await handlers[step]?.(value);
   };
@@ -551,20 +524,7 @@ export default function Register() {
       },
       onSuccess: () => {
         setIsTyping(false);
-        setStep(10);
-        fetch('/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-          .catch(() => {})
-          .finally(() => {
-            // Redirection intelligente selon les modules actifs
-            const redirectTo = hasHotel && hasFnB
-              ? '/dashboard/hotel-fnb'
-              : hasHotel
-              ? '/hotel/dashboard'
-              : hasFnB
-              ? '/fnb/dashboard'
-              : '/dashboard';
-            setTimeout(() => router.visit(redirectTo), 4000);
-          });
+        setStep(9);
         addNexaMessage(
           <div className="space-y-2">
             <p className="text-slate-900 font-medium">✨ Initialisation terminée</p>
@@ -590,34 +550,49 @@ export default function Register() {
   // ─── Input Renderer ────────────────────────────────────────────────────────
 
   const renderInputArea = () => {
-    if (step <= 4) {
-      const placeholders = [
-        "Nom de la société...",
-        "Pays...",
-        "Région...",
-        "Ville...",
-        "Devise (ex: XOF, EUR, USD)...",
-      ];
-      return <SingleInput onSubmit={handleInputSubmit} placeholder={placeholders[step]} />;
+    if (step === 0) {
+      // Business type selection UI
+      return (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {(['boissons', 'hotel', 'fnb', 'hotel_fnb'] as CompanyType[]).map(type => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => handleInputSubmit(type)}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-400 transition-all shadow-sm group"
+            >
+              <span className="text-2xl">{SECTOR_CONFIGS[type].icon}</span>
+              <span className="font-semibold text-slate-800 text-sm group-hover:text-emerald-700">{SECTOR_CONFIGS[type].label}</span>
+              {type === 'hotel_fnb' && (
+                <span className="text-[11px] text-emerald-600 font-medium mt-1">Mode 3 — Hôtel + F&B liés</span>
+              )}
+            </button>
+          ))}
+        </div>
+      );
     }
-
+    if (step === 1) {
+      return <SingleInput onSubmit={handleInputSubmit} placeholder="Nom de la société..." />;
+    }
+    if (step === 2) {
+      return <SingleInput onSubmit={handleInputSubmit} placeholder="Pays..." />;
+    }
+    if (step === 3) {
+      return <SingleInput onSubmit={handleInputSubmit} placeholder="Région..." />;
+    }
+    if (step === 4) {
+      return <SingleInput onSubmit={handleInputSubmit} placeholder="Ville..." />;
+    }
     if (step === 5) {
-      return <ModuleSelect onSubmit={(payload) => handleInputSubmit(payload)} />;
-    }
-
-    if (step === 6) {
       return <SingleInput onSubmit={handleInputSubmit} placeholder="Téléphone (ex: +228 90 00 00 00)..." />;
     }
-
-    if (step === 7) {
+    if (step === 6) {
       return <DoubleInput onSubmit={handleInputSubmit} ph1="Email professionnel" ph2="Mot de passe sécurisé" k1="email" k2="password" type2="password" />;
     }
-
-    if (step === 8) {
+    if (step === 7) {
       return <OTPInput onSubmit={handleInputSubmit} />;
     }
-
-    if (step === 9) {
+    if (step === 8) {
       return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           <div className="flex flex-wrap gap-2 items-center text-xs text-slate-500 mb-2">
@@ -643,8 +618,7 @@ export default function Register() {
         </motion.div>
       );
     }
-
-    if (step === 10) {
+    if (step === 9) {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Link href="/login" className="w-full h-12 rounded-xl border border-slate-300 bg-slate-100 text-slate-700 text-sm font-medium flex items-center justify-center hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm">
@@ -653,20 +627,18 @@ export default function Register() {
         </motion.div>
       );
     }
-
     return null;
   };
 
-  const totalSteps = 10;
+  const totalSteps = 9;
   const progress = Math.min((step / totalSteps) * 100, 100);
 
   const stepLabels = [
+    { label: 'Secteur', icon: <Boxes className="h-3 w-3" /> },
     { label: 'Entreprise', icon: <Building2 className="h-3 w-3" /> },
     { label: 'Pays', icon: <Globe className="h-3 w-3" /> },
     { label: 'Région', icon: <Map className="h-3 w-3" /> },
     { label: 'Ville', icon: <MapPin className="h-3 w-3" /> },
-    { label: 'Devise', icon: <Coins className="h-3 w-3" /> },
-    { label: 'Modules', icon: <Boxes className="h-3 w-3" /> },
     { label: 'Contact', icon: <Users className="h-3 w-3" /> },
     { label: 'Administrateur', icon: <User className="h-3 w-3" /> },
     { label: 'Vérification', icon: <CheckCircle2 className="h-3 w-3" /> },
@@ -1019,49 +991,37 @@ function OTPInput({ onSubmit }: { onSubmit: (v: string) => void }) {
 
 // ─── Module Select ────────────────────────────────────────────────────────────
 
-function ModuleSelect({ onSubmit }: { onSubmit: (payload: { modules: string[]; estimatedRooms?: string; estimatedTables?: string }) => void }) {
-  const [selected, setSelected] = useState<string[]>([]);
+function ModuleSelect({ onSubmit }: { onSubmit: (payload: { companyType: CompanyType; estimatedRooms?: string; estimatedTables?: string }) => void }) {
+  const [companyType, setCompanyType] = useState<CompanyType | ''>('');
   const [estimatedRooms, setEstimatedRooms] = useState('');
   const [estimatedTables, setEstimatedTables] = useState('');
 
-  const hasHotel = selected.includes('hotel');
-  const hasFnB = selected.includes('fnb');
-
-  const toggle = (key: string) => {
-    if (key === 'hotel+fnb') {
-      const hasBoth = selected.includes('hotel') && selected.includes('fnb');
-      if (hasBoth) {
-        setSelected(s => s.filter(m => m !== 'hotel' && m !== 'fnb'));
-      } else {
-        setSelected(s => [...s.filter(m => m !== 'hotel' && m !== 'fnb'), 'hotel', 'fnb']);
-      }
-    } else {
-      setSelected(s => s.includes(key) ? s.filter(m => m !== key) : [...s, key]);
-    }
-  };
-
-  const isSelected = (key: string) => {
-    if (key === 'hotel+fnb') return selected.includes('hotel') && selected.includes('fnb');
-    return selected.includes(key);
-  };
+  const showHotelFields = companyType === 'hotel' || companyType === 'hotel_fnb';
+  const showFnBFields = companyType === 'fnb' || companyType === 'hotel_fnb';
 
   const cards = [
     {
-      key: 'hotel',
+      key: 'boissons' as const,
+      label: 'Distribution Boissons',
+      desc: 'Gestion du stock, tournées et finance pour boissons.',
+      icon: <Coffee className="h-4 w-4" />,
+    },
+    {
+      key: 'hotel' as const,
       label: 'Hôtellerie',
-      desc: 'Chambres, réservations, check-in/out',
+      desc: 'Réservations, chambres et facturation hébergement.',
       icon: <BedDouble className="h-4 w-4" />,
     },
     {
-      key: 'fnb',
-      label: 'Restauration / F&B',
-      desc: 'Tables, commandes, cuisine, caisse',
+      key: 'fnb' as const,
+      label: 'Restauration F&B',
+      desc: 'Service, cuisine et caisse pour restaurants.',
       icon: <UtensilsCrossed className="h-4 w-4" />,
     },
     {
-      key: 'hotel+fnb',
-      label: 'Hôtel + Restaurant',
-      desc: 'Les deux modules liés',
+      key: 'hotel_fnb' as const,
+      label: 'Mode 3 — Hotel + F&B liés',
+      desc: 'Synchronisation totale entre réservation, salle, cuisine et facturation.',
       icon: <Sparkles className="h-4 w-4" />,
     },
   ];
@@ -1070,134 +1030,97 @@ function ModuleSelect({ onSubmit }: { onSubmit: (payload: { modules: string[]; e
   const tableOptions = ['Moins de 10', '10 à 30', 'Plus de 30'];
 
   return (
-    <div className="space-y-2.5">
-      {/* Drinks — always active */}
-      <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200">
-        <div className="h-7 w-7 rounded-lg bg-slate-700 text-white flex items-center justify-center shrink-0">
-          <Coffee className="h-3.5 w-3.5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-slate-700">Distribution Boissons</p>
-          <p className="text-[10px] text-slate-400">Toujours actif</p>
-        </div>
-        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        <p className="font-semibold text-slate-900 mb-1">Type d'entreprise</p>
+        <p>Choisissez le profil qui décrit le mieux votre activité. Cette sélection détermine le périmètre de démarrage.</p>
       </div>
 
-      {/* Optional modules */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {cards.map(card => (
           <button
             key={card.key}
             type="button"
-            onClick={() => toggle(card.key)}
-            className={`flex flex-col items-start gap-1.5 p-2.5 rounded-xl border text-left transition-all duration-200 ${
-              isSelected(card.key)
-                ? 'border-slate-700 bg-slate-800 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+            onClick={() => setCompanyType(card.key)}
+            className={`flex flex-col items-start gap-2 p-3 rounded-2xl border text-left transition-all duration-200 ${
+              companyType === card.key
+                ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
-            <span className={isSelected(card.key) ? 'text-white' : 'text-slate-400'}>
+            <span className={companyType === card.key ? 'text-white' : 'text-slate-500'}>
               {card.icon}
             </span>
-            <p className={`text-[11px] font-semibold leading-tight ${isSelected(card.key) ? 'text-white' : 'text-slate-800'}`}>
-              {card.label}
-            </p>
-            <p className={`text-[10px] leading-tight ${isSelected(card.key) ? 'text-slate-300' : 'text-slate-400'}`}>
-              {card.desc}
-            </p>
+            <p className="text-sm font-semibold leading-tight">{card.label}</p>
+            <p className="text-[11px] leading-snug text-slate-500">{card.desc}</p>
           </button>
         ))}
       </div>
 
-      {/* Champs conditionnels Hotel + F&B */}
       <AnimatePresence>
-        {hasHotel && (
+        {companyType === 'hotel_fnb' && (
           <motion.div
-            key="hotel-rooms"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
+            key="mode-3-description"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[12px] text-emerald-800"
           >
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <BedDouble className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <p className="text-[11px] text-slate-600 shrink-0">Chambres estimées :</p>
-              <div className="flex gap-1.5 flex-wrap">
-                {roomOptions.map(opt => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setEstimatedRooms(estimatedRooms === opt ? '' : opt)}
-                    className={`text-[10px] px-2 py-1 rounded-lg border transition-all duration-150 font-medium ${
-                      estimatedRooms === opt
-                        ? 'bg-slate-800 text-white border-slate-700'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {hasFnB && (
-          <motion.div
-            key="fnb-tables"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <UtensilsCrossed className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <p className="text-[11px] text-slate-600 shrink-0">Tables estimées :</p>
-              <div className="flex gap-1.5 flex-wrap">
-                {tableOptions.map(opt => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setEstimatedTables(estimatedTables === opt ? '' : opt)}
-                    className={`text-[10px] px-2 py-1 rounded-lg border transition-all duration-150 font-medium ${
-                      estimatedTables === opt
-                        ? 'bg-slate-800 text-white border-slate-700'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {hasHotel && hasFnB && (
-          <motion.div
-            key="linked-mode-badge"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              <p className="text-[11px] text-emerald-700 leading-relaxed">
-                <strong>Mode liaison activé</strong> — vos commandes restaurant seront rattachables aux réservations hôtel.
-              </p>
-            </div>
+            <p className="font-semibold">Mode 3 — Hotel + F&B liés</p>
+            <p>Vos réservations, commandes de salle et flux de cuisine sont orchestrés dans un parcours connecté, avec facturation et planning centralisés.</p>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {showHotelFields && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Nombre de chambres estimé</p>
+          <div className="flex flex-wrap gap-2">
+            {roomOptions.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setEstimatedRooms(estimatedRooms === opt ? '' : opt)}
+                className={`text-[11px] px-3 py-2 rounded-xl border transition-all duration-150 ${
+                  estimatedRooms === opt
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showFnBFields && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Nombre de tables estimé</p>
+          <div className="flex flex-wrap gap-2">
+            {tableOptions.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setEstimatedTables(estimatedTables === opt ? '' : opt)}
+                className={`text-[11px] px-3 py-2 rounded-xl border transition-all duration-150 ${
+                  estimatedTables === opt
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
-        onClick={() => onSubmit({ modules: selected, estimatedRooms: estimatedRooms || undefined, estimatedTables: estimatedTables || undefined })}
-        className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm font-medium bg-slate-800 text-white hover:bg-slate-700 transition-colors shadow-sm"
+        onClick={() => companyType && onSubmit({ companyType, estimatedRooms: estimatedRooms || undefined, estimatedTables: estimatedTables || undefined })}
+        disabled={!companyType}
+        className="w-full h-11 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all duration-200 shadow-sm disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 bg-slate-900 text-white hover:bg-slate-800"
       >
         <ArrowRight className="h-4 w-4" />
         Continuer

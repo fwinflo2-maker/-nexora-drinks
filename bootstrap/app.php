@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckModuleAccess;
+use App\Http\Middleware\EnsureUserNotBlocked;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveTenant;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             ResolveTenant::class,
+            EnsureUserNotBlocked::class,
             SetTeamUrlDefaults::class,
         ]);
     })

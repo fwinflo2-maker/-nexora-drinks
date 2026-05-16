@@ -4,7 +4,7 @@ import {
     Package, Truck, ArrowRight, Activity, Zap, BarChart3, Users, DollarSign,
     Boxes, MapPin, Shield, PieChart, ClipboardCheck, ShoppingCart, CreditCard,
     Layout, Cpu, Globe, Lock, FileText, BedDouble, UtensilsCrossed,
-    CalendarCheck, ChefHat, Coffee, Layers,
+    CalendarCheck, ChefHat, Coffee, Layers, Sparkles,
 } from 'lucide-react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -31,6 +31,8 @@ interface Sector {
     badgeColor: string;
     description: string;
     roles: RoleCard[];
+    featured?: boolean;
+    featuredLabel?: string;
 }
 
 // ─── Sector Data ──────────────────────────────────────────────────────────────
@@ -72,7 +74,7 @@ const SECTORS: Sector[] = [
     {
         key: 'fnb',
         title: 'Restauration & F&B',
-        subtitle: 'Restaurants, cafés, hôtels-restaurants',
+        subtitle: 'Restaurants, cafés, bars',
         icon: UtensilsCrossed,
         iconBg: 'bg-emerald-50 text-emerald-600',
         badge: 'F&B',
@@ -82,6 +84,23 @@ const SECTORS: Sector[] = [
             { name: 'Manager F&B', color: 'bg-emerald-100 text-emerald-700', modules: [{ n: 'Dashboard', i: BarChart3 }, { n: 'CA par heure', i: DollarSign }, { n: 'Articles menu', i: Layout }, { n: 'Paramètres', i: Shield }] },
             { name: 'Serveur', color: 'bg-teal-100 text-teal-700', modules: [{ n: 'Tables', i: Users }, { n: 'Commandes', i: ShoppingCart }, { n: 'Écran cuisine', i: ChefHat }, { n: 'Additions', i: FileText }] },
             { name: 'Caissier F&B', color: 'bg-green-100 text-green-700', modules: [{ n: 'Encaissements', i: CreditCard }, { n: 'Clôture caisse', i: Lock }, { n: 'Rapports', i: PieChart }, { n: 'Historique', i: ClipboardCheck }] },
+        ],
+    },
+    {
+        key: 'hotel_fnb',
+        title: 'Hôtel + Restaurant liés',
+        subtitle: 'Établissements proposant hébergement et restauration',
+        icon: Sparkles,
+        iconBg: 'bg-violet-50 text-violet-600',
+        badge: 'Mode 3',
+        badgeColor: 'bg-violet-100 text-violet-700',
+        description: 'La configuration la plus complète : hôtellerie et restauration synchronisées dans un seul espace. Room service lié aux chambres, checkout bloqué si commandes ouvertes, folio restaurant fusionné à la note de séjour.',
+        featured: true,
+        featuredLabel: 'Configuration premium',
+        roles: [
+            { name: 'Manager Intégré', color: 'bg-violet-100 text-violet-700', modules: [{ n: 'Vue consolidée', i: BarChart3 }, { n: 'Revenus globaux', i: DollarSign }, { n: 'Occupation + CA', i: PieChart }, { n: 'Paramètres', i: Shield }] },
+            { name: 'Réceptionniste', color: 'bg-blue-100 text-blue-700', modules: [{ n: 'Réservations', i: CalendarCheck }, { n: 'Check-in/out', i: BedDouble }, { n: 'Room service', i: UtensilsCrossed }, { n: 'Folio client', i: FileText }] },
+            { name: 'Serveur / Cuisine', color: 'bg-emerald-100 text-emerald-700', modules: [{ n: 'Tables & salle', i: Users }, { n: 'Commandes', i: ShoppingCart }, { n: 'Écran cuisine', i: ChefHat }, { n: 'Liaison chambre', i: BedDouble }] },
         ],
     },
 ];
@@ -111,7 +130,16 @@ function SectorSection({ sector, index }: { sector: Sector; index: number }) {
             className="space-y-5"
         >
             {/* Sector header card */}
-            <div className="rounded-2xl border border-border bg-secondary/30 p-6">
+            <div className={`rounded-2xl border p-6 ${sector.featured
+                ? 'border-violet-200 bg-violet-50/40 dark:border-violet-800/40 dark:bg-violet-900/10'
+                : 'border-border bg-secondary/30'
+            }`}>
+                {sector.featured && sector.featuredLabel && (
+                    <div className="flex items-center gap-1.5 mb-4">
+                        <Sparkles className="h-3 w-3 text-violet-500" />
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-violet-500">{sector.featuredLabel}</span>
+                    </div>
+                )}
                 <div className="flex items-start gap-5">
                     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${sector.iconBg}`}>
                         <Icon className="h-7 w-7" />
@@ -127,6 +155,21 @@ function SectorSection({ sector, index }: { sector: Sector; index: number }) {
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{sector.description}</p>
                     </div>
                 </div>
+
+                {sector.featured && (
+                    <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-violet-100 dark:border-violet-900/30 pt-5">
+                        {[
+                            { label: 'Room service lié aux chambres', icon: BedDouble },
+                            { label: 'Checkout bloqué si commandes ouvertes', icon: Lock },
+                            { label: 'Folio restaurant fusionné à la note de séjour', icon: FileText },
+                        ].map(({ label, icon: I }) => (
+                            <div key={label} className="flex items-start gap-2.5 text-xs text-violet-700 dark:text-violet-300">
+                                <I className="h-3.5 w-3.5 mt-0.5 shrink-0 text-violet-500" />
+                                <span>{label}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Roles grid */}
@@ -227,7 +270,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                     >
                         <motion.div variants={itemVariants} className="mb-6 inline-flex items-center rounded-full border border-border bg-secondary/50 px-3 py-1 text-xs font-medium backdrop-blur-sm">
                             <Zap className="h-3.5 w-3.5 mr-2 fill-foreground/20" />
-                            NEXORA ERP — Distribution, Hôtellerie & Restauration
+                            ERP multi-secteur · Distribution, Hôtellerie & Restauration
                         </motion.div>
 
                         <motion.h1 variants={itemVariants} className="max-w-4xl text-5xl font-bold tracking-tighter sm:text-7xl lg:text-8xl">
@@ -236,7 +279,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         </motion.h1>
 
                         <motion.p variants={itemVariants} className="mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed">
-                            NEXORA centralise vos opérations — stocks, commandes, réservations, tables et finances — dans une seule plateforme modulaire pilotée par l'IA.
+                            NEXORA centralise vos opérations — stocks, commandes, réservations, tables et finances — dans une seule plateforme modulaire. Configurée pour votre secteur, pilotée par l'IA.
                         </motion.p>
 
                         <motion.div variants={itemVariants} className="mt-10 flex flex-col sm:flex-row items-center gap-4">
@@ -249,12 +292,13 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             </Link>
                         </motion.div>
 
-                        {/* Module pills */}
+                        {/* Sector pills */}
                         <motion.div variants={itemVariants} className="mt-8 flex flex-wrap justify-center gap-2">
                             {[
-                                { label: 'Distribution Boissons', icon: Coffee, color: 'bg-amber-50 text-amber-700 border-amber-200' },
-                                { label: 'Hôtellerie', icon: BedDouble, color: 'bg-blue-50 text-blue-700 border-blue-200' },
-                                { label: 'Restauration F&B', icon: UtensilsCrossed, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                                { label: 'Distribution Boissons', icon: Coffee, color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/40' },
+                                { label: 'Hôtellerie', icon: BedDouble, color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/40' },
+                                { label: 'Restauration F&B', icon: UtensilsCrossed, color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/40' },
+                                { label: 'Hôtel + Restaurant — Mode 3', icon: Sparkles, color: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800/40' },
                             ].map(({ label, icon: Icon, color }) => (
                                 <span key={label} className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${color}`}>
                                     <Icon className="h-3 w-3" />
@@ -264,13 +308,43 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         </motion.div>
                     </motion.div>
 
-                    {/* ── Sectors ── */}
-                    <div className="mt-32 w-full max-w-6xl space-y-16">
+                    {/* ── What is Nexora ── */}
+                    <div className="mt-24 w-full max-w-6xl">
+                        <div className="rounded-2xl border border-border bg-secondary/20 p-8 md:p-12">
+                            <div className="max-w-3xl">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Ce qu'est NEXORA</p>
+                                <h2 className="text-3xl font-bold tracking-tight mb-6">
+                                    Un seul espace de travail.<br />
+                                    <span className="text-muted-foreground">Adapté à votre activité.</span>
+                                </h2>
+                                <p className="text-base text-muted-foreground leading-relaxed mb-6">
+                                    NEXORA est une plateforme ERP SaaS multi-tenant conçue pour les PME d'Afrique centrale. Lors de l'inscription, vous choisissez votre secteur d'activité — et NEXORA déploie instantanément un espace pré-configuré avec les modules, les rôles et les structures de données adaptés à votre métier.
+                                </p>
+                                <p className="text-base text-muted-foreground leading-relaxed">
+                                    Pas de paramétrage complexe. L'assistant IA <strong className="text-foreground font-semibold">NEXA</strong> guide votre onboarding en quelques minutes : nom de l'entreprise, localisation, devise, contacts, vérification par OTP — et votre espace est prêt.
+                                </p>
+                            </div>
+                            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-border pt-8">
+                                {[
+                                    { value: '4', label: 'Configurations sectorielles' },
+                                    { value: 'Multi-rôles', label: 'Permissions fines par module' },
+                                    { value: 'Temps réel', label: 'Dashboard & écran cuisine' },
+                                    { value: 'FCFA / XOF', label: 'Conçu pour l\'Afrique centrale' },
+                                ].map(({ value, label }) => (
+                                    <div key={label}>
+                                        <p className="text-xl font-bold text-foreground">{value}</p>
+                                        <p className="text-xs text-muted-foreground mt-1 leading-snug">{label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
-                        {/* Section header */}
+                    {/* ── Sectors ── */}
+                    <div className="mt-24 w-full max-w-6xl space-y-16">
                         <div className="flex items-center gap-3">
                             <Layers className="h-5 w-5 text-muted-foreground" />
-                            <h2 className="text-2xl font-bold tracking-tight">Modules disponibles</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">Configurations disponibles</h2>
                         </div>
 
                         {SECTORS.map((sector, idx) => (
@@ -312,7 +386,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
 
                 <footer className="border-t border-border py-12 text-center">
                     <p className="text-sm text-muted-foreground">
-                        &copy; {new Date().getFullYear()} NEXORA. Conçu pour l'Afrique centrale.
+                        &copy; {new Date().getFullYear()} NEXORA — Conçu pour l'Afrique centrale.
                     </p>
                 </footer>
             </PageTransition>

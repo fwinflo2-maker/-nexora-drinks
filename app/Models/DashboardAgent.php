@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DashboardAgent extends Model
 {
+    use BelongsToTeam;
+
     protected $fillable = [
         'team_id',
         'role',
@@ -48,6 +51,8 @@ class DashboardAgent extends Model
 
 class AgentConversation extends Model
 {
+    use BelongsToTeam;
+
     protected $fillable = [
         'team_id',
         'user_id',

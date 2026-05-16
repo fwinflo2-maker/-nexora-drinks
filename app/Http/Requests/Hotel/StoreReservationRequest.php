@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Hotel;
 
+use App\Models\Hotel\Reservation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreReservationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', Reservation::class);
     }
 
     /** @return array<string, mixed> */
